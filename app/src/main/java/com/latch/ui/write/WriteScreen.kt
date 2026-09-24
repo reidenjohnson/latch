@@ -107,18 +107,25 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private sealed interface Route {
+internal sealed interface Route {
     data object Home : Route
     data object AllBlueprints : Route
     data class Compose(val title: String, val blueprint: Blueprint? = null) : Route
     data object Batch : Route
 }
 
+/** The Write tab's screen + draft. Held by LatchRoot so switching tabs never loses a half-built tag. */
+class WriteState {
+    internal var route by mutableStateOf<Route>(Route.Home)
+    var draft by mutableStateOf(listOf<RecordSpec>())
+    var autoArm by mutableStateOf(false)
+}
+
 @Composable
-fun WriteScreen(nfc: NfcController, templates: TemplateStore, handoff: DraftHandoff) {
-    var route by remember { mutableStateOf<Route>(Route.Home) }
-    var draft by remember { mutableStateOf(listOf<RecordSpec>()) }
-    var autoArm by remember { mutableStateOf(false) }
+fun WriteScreen(state: WriteState, nfc: NfcController, templates: TemplateStore, handoff: DraftHandoff) {
+    var route by state::route
+    var draft by state::draft
+    var autoArm by state::autoArm
     val pending by handoff.pending.collectAsState()
 
     LaunchedEffect(pending) {

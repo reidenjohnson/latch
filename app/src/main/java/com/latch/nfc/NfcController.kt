@@ -35,8 +35,6 @@ class NfcController(private val context: Context, private val history: HistorySt
     private val _readProblem = MutableStateFlow<Problem?>(null)
     val readProblem: StateFlow<Problem?> = _readProblem.asStateFlow()
 
-    @Volatile var passiveReadEnabled = false
-
     fun setAvailability(value: NfcAvailability) { _availability.value = value }
     fun arm(op: Operation) { _sheet.value = SheetState.Waiting(op) }
     fun dismiss() { Log.d(TAG, "sheet dismissed"); _sheet.value = SheetState.Hidden }
@@ -60,7 +58,8 @@ class NfcController(private val context: Context, private val history: HistorySt
 
     /** Called on the reader-mode binder thread. Blocking I/O is fine here. */
     fun onTag(tag: Tag) {
-        Log.d(TAG, "onTag uid=${TagIo.uid(tag)} sheet=${_sheet.value::class.simpleName} passive=$passiveReadEnabled techs=${tag.techList.size}")
+        Log.d(TAG, "onTag uid=${TagIo.uid(tag)} sheet=${_sheet.value::class.simpleName} techs=${tag.techList.size}")
+        // Every tap does something. With nothing armed, the tag is read on any tab (the UI offers "View" off the Read tab).
         when (val state = _sheet.value) {
             is SheetState.Waiting -> perform(state, tag)
             is SheetState.Done -> {
@@ -68,10 +67,10 @@ class NfcController(private val context: Context, private val history: HistorySt
                 // stuck on a finished result if the sheet's close animation didn't report back.
                 if (System.currentTimeMillis() - state.at > DONE_GRACE_MS && state.report == null) {
                     _sheet.compareAndSet(state, SheetState.Hidden)
-                    if (passiveReadEnabled) read(tag)
+                    read(tag)
                 }
             }
-            SheetState.Hidden -> if (passiveReadEnabled) read(tag)
+            SheetState.Hidden -> read(tag)
         }
     }
 

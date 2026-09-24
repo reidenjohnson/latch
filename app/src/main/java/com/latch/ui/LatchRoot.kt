@@ -24,8 +24,14 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.collectAsState
+import com.latch.ui.write.WriteState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -57,12 +63,27 @@ fun LatchRoot(app: LatchApplication) {
     var tab by rememberSaveable { mutableStateOf(Tab.Read) }
     val sheet by nfc.sheet.collectAsState()
     val availability by nfc.availability.collectAsState()
+    val lastRead by nfc.lastRead.collectAsState()
+    val readProblem by nfc.readProblem.collectAsState()
+    val writeState = remember { WriteState() } // lives here so switching tabs never wipes a half-built tag
+    val snackbar = remember { SnackbarHostState() }
 
-    // Passive reads only happen on the Read tab, so a tag bumped while typing a form does nothing.
-    SideEffect { nfc.passiveReadEnabled = tab == Tab.Read }
+    // A tag read while you're on another tab: tell the user and offer to jump to it.
+    LaunchedEffect(lastRead?.time) {
+        val s = lastRead ?: return@LaunchedEffect
+        if (tab != Tab.Read) {
+            val r = snackbar.showSnackbar("Read: ${s.summary}", actionLabel = "View", duration = SnackbarDuration.Long)
+            if (r == SnackbarResult.ActionPerformed) tab = Tab.Read
+        }
+    }
+    LaunchedEffect(readProblem) {
+        val p = readProblem ?: return@LaunchedEffect
+        if (tab != Tab.Read) snackbar.showSnackbar("${p.title}. ${p.detail}")
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
             NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainerLow) {
                 Tab.entries.forEach { t ->
@@ -88,7 +109,7 @@ fun LatchRoot(app: LatchApplication) {
                         app.handoff.pending.value = specs
                         tab = Tab.Write
                     })
-                    Tab.Write -> WriteScreen(nfc, app.templates, app.handoff)
+                    Tab.Write -> WriteScreen(writeState, nfc, app.templates, app.handoff)
                     Tab.Tools -> ToolsScreen(nfc)
                     Tab.History -> HistoryScreen(app.history, nfc)
                 }
