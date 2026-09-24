@@ -59,6 +59,15 @@ import com.latch.nfc.Problem
 import com.latch.nfc.RecordKind
 import com.latch.nfc.RecordType
 import com.latch.ui.theme.Accent
+import com.latch.ui.theme.extras
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.material.icons.rounded.AlternateEmail
 import androidx.compose.material.icons.rounded.Bluetooth
 import androidx.compose.material.icons.rounded.EnhancedEncryption
@@ -160,20 +169,72 @@ val Operation.accent: Color
         Operation.MakeReadOnly -> Accent.brick
     }
 
+/** Screen title: a small colored overline, a big display title, and a quiet subtitle. */
 @Composable
 fun ScreenHeader(
     title: String,
     subtitle: String,
     modifier: Modifier = Modifier,
+    overline: String? = null,
+    accent: Color = MaterialTheme.colorScheme.primary,
     trailing: (@Composable () -> Unit)? = null,
 ) {
-    Row(modifier.fillMaxWidth().padding(top = 12.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(modifier.fillMaxWidth().padding(top = 16.dp, bottom = 10.dp), verticalAlignment = Alignment.Bottom) {
         Column(Modifier.weight(1f)) {
+            if (overline != null) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(width = 14.dp, height = 3.dp).clip(CircleShape).background(accent))
+                    Spacer(Modifier.size(8.dp))
+                    Text(overline.uppercase(), style = MaterialTheme.typography.labelMedium, color = accent)
+                }
+                Spacer(Modifier.size(6.dp))
+            }
             Text(title, style = MaterialTheme.typography.headlineLarge)
             Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         trailing?.invoke()
     }
+}
+
+/** Kairos-style card: white surface, hairline border, soft tinted shadow. */
+@Composable
+fun LatchCard(
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    emphasized: Boolean = false,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    val shape = RoundedCornerShape(if (emphasized) 24.dp else 20.dp)
+    val x = extras
+    var m = modifier
+        .shadow(if (emphasized) 10.dp else 2.dp, shape, clip = false, ambientColor = x.shadow, spotColor = x.shadow)
+        .clip(shape)
+    m = if (emphasized) m.background(Brush.verticalGradient(listOf(x.heroTop, x.heroBottom))) else m.background(MaterialTheme.colorScheme.surface)
+    m = m.border(1.dp, x.line, shape)
+    if (onClick != null) m = m.clickable(onClick = onClick)
+    Column(m, content = content)
+}
+
+/** A bold gradient panel in one accent (hero moments: Read hero, Blueprint tiles, Tools banner). */
+@Composable
+fun GradientPanel(
+    colors: List<Color>,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    content: @Composable BoxScope.() -> Unit,
+) {
+    val shape = RoundedCornerShape(26.dp)
+    var m = modifier
+        .shadow(12.dp, shape, clip = false, ambientColor = colors.last(), spotColor = colors.last())
+        .clip(shape)
+        .background(Brush.linearGradient(colors, start = Offset.Zero, end = Offset.Infinite))
+    if (onClick != null) m = m.clickable(onClick = onClick)
+    Box(m, content = content)
+}
+
+@Composable
+fun Overline(text: String, color: Color) {
+    Text(text.uppercase(), style = MaterialTheme.typography.labelMedium, color = color)
 }
 
 /** Icon inside a softly tinted circle. */
@@ -257,7 +318,7 @@ fun DetailRow(label: String, value: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun surfaceCardColors() = CardDefaults.cardColors(
+fun surfaceCardColors() = CardDefaults.cardColors( // kept for dialogs; screens use LatchCard
     containerColor = MaterialTheme.colorScheme.surfaceContainer,
     contentColor = MaterialTheme.colorScheme.onSurface,
 )

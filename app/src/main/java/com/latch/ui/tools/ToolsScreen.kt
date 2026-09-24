@@ -56,6 +56,10 @@ import com.latch.ui.components.IconBadge
 import com.latch.ui.components.ScreenHeader
 import com.latch.ui.components.surfaceCardColors
 import com.latch.ui.theme.Accent
+import com.latch.ui.theme.extras
+import com.latch.ui.components.GradientPanel
+import com.latch.ui.components.LatchCard
+import androidx.compose.material.icons.rounded.Handyman
 
 private enum class Dialog { Lock, SetPassword, RemovePassword, Counter, Raw }
 
@@ -67,7 +71,20 @@ fun ToolsScreen(nfc: NfcController) {
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        item { ScreenHeader("Tools", "Everything, free. No subscriptions.") }
+        item { ScreenHeader("Tools", "Copy, protect and dig into your tags", overline = "Toolkit", accent = Accent.amber) }
+        item {
+            GradientPanel(extras.amberGradient, Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
+                Row(Modifier.fillMaxWidth().padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Every pro feature.", style = MaterialTheme.typography.titleLarge, color = Color.White)
+                        Text("Passwords, batch writing, memory tools and more. Free, forever.",
+                            style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.88f))
+                    }
+                    Spacer(Modifier.size(12.dp))
+                    Icon(Icons.Rounded.Handyman, contentDescription = null, tint = Color.White.copy(alpha = 0.9f), modifier = Modifier.size(40.dp))
+                }
+            }
+        }
         item { Section("Everyday") }
         item { ToolCard(Icons.Rounded.ContentCopy, "Copy a tag", "Tap the original, then a new tag. Everything is copied over.", tint = Accent.teal) { nfc.arm(Operation.CopySource) } }
         item { ToolCard(Icons.Rounded.DocumentScanner, "Scan many", "Tap tag after tag, then export the list as a spreadsheet.", tint = Accent.teal) { nfc.arm(Operation.ReadMany()) } }
@@ -109,7 +126,7 @@ private fun Section(title: String) {
 
 @Composable
 private fun ToolCard(icon: ImageVector, title: String, body: String, tint: Color = MaterialTheme.colorScheme.primary, onClick: () -> Unit) {
-    Card(onClick = onClick, colors = surfaceCardColors()) {
+    LatchCard(onClick = onClick) {
         Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             IconBadge(icon, tint = tint)
             Spacer(Modifier.size(14.dp))
@@ -124,7 +141,7 @@ private fun ToolCard(icon: ImageVector, title: String, body: String, tint: Color
 
 @Composable
 private fun TipsCard() {
-    Card(colors = surfaceCardColors(), modifier = Modifier.padding(top = 8.dp)) {
+    LatchCard(Modifier.padding(top = 8.dp)) {
         Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Rounded.Lightbulb, contentDescription = null, tint = Accent.amber)

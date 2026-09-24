@@ -55,7 +55,7 @@ fun HistoryScreen(history: HistoryStore, nfc: NfcController) {
 
     if (entries.isEmpty()) {
         Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
-            ScreenHeader("History", "Everything you've read and written")
+            ScreenHeader("History", "Everything you've read and written", overline = "Log", accent = Accent.teal)
             Column(Modifier.fillMaxWidth().weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                 IconBadge(Icons.Rounded.History, size = 72.dp, tint = Accent.teal)
                 Spacer(Modifier.height(16.dp))
@@ -75,9 +75,9 @@ fun HistoryScreen(history: HistoryStore, nfc: NfcController) {
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         item {
-            ScreenHeader("History", "Everything you've read and written", trailing = {
-                TextButton(onClick = { exportCsv(context, entries) }) { Text("Export") }
-                TextButton(onClick = { confirmClear = true }) { Text("Clear") }
+            ScreenHeader("History", "Everything you've read and written", overline = "Log", accent = Accent.teal, trailing = {
+                TextButton(onClick = { exportCsv(context, entries) }) { Text("Export", color = Accent.teal) }
+                TextButton(onClick = { confirmClear = true }) { Text("Clear", color = Accent.teal) }
             })
         }
         items(entries, key = { it.id }) { e -> HistoryRow(e, onClick = { selected = e }) }
@@ -116,7 +116,7 @@ fun HistoryScreen(history: HistoryStore, nfc: NfcController) {
 
 @Composable
 private fun HistoryRow(e: HistoryEntry, onClick: () -> Unit) {
-    Card(onClick = onClick, colors = surfaceCardColors()) {
+    com.latch.ui.components.LatchCard(onClick = onClick) {
         Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             IconBadge(e.action.icon, size = 40.dp, tint = e.action.accent)
             Spacer(Modifier.size(14.dp))

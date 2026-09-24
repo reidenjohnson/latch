@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.latch.ui.theme.Accent
+import com.latch.ui.theme.extras
 import com.latch.nfc.Mirror
 import com.latch.nfc.RecordSpec
 import com.latch.nfc.RecordType
@@ -35,6 +36,13 @@ enum class BlueprintGroup(val label: String) {
             Home -> Accent.fern
             Share, Everyday -> Accent.teal
             Safety, Power -> Accent.amber
+        }
+
+    val gradient: List<Color>
+        @Composable get() = when (this) {
+            Home -> extras.fernGradient
+            Share, Everyday -> extras.tealGradient
+            Safety, Power -> extras.amberGradient
         }
 }
 

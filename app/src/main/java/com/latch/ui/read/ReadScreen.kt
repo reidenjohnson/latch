@@ -94,39 +94,36 @@ import com.latch.ui.components.ScreenHeader
 import com.latch.ui.components.icon
 import com.latch.ui.components.accent
 import com.latch.ui.theme.Accent
+import com.latch.ui.theme.extras
+import com.latch.data.HistoryStore
+import com.latch.ui.components.GradientPanel
+import com.latch.ui.components.LatchCard
+import android.text.format.DateUtils
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.DocumentScanner
+import androidx.compose.ui.text.style.TextOverflow
 import com.latch.ui.components.surfaceCardColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-fun ReadScreen(nfc: NfcController, onWrite: () -> Unit, onEdit: (List<RecordSpec>) -> Unit) {
+fun ReadScreen(
+    nfc: NfcController,
+    history: HistoryStore,
+    onWrite: () -> Unit,
+    onBlueprints: () -> Unit,
+    onHistory: () -> Unit,
+    onEdit: (List<RecordSpec>) -> Unit,
+) {
     val snapshot by nfc.lastRead.collectAsState()
     val problem by nfc.readProblem.collectAsState()
     val context = LocalContext.current
     val s = snapshot
 
     if (s == null) {
-        Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
-            ScreenHeader("Read", "See what's on any tag")
-            problem?.let { ProblemCard(it, Modifier.padding(top = 8.dp)) }
-            Column(
-                Modifier.fillMaxWidth().weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                PulseRing(Icons.Rounded.Nfc, color = Accent.teal, onColor = MaterialTheme.colorScheme.surface)
-                Spacer(Modifier.height(28.dp))
-                Text("Hold a tag to your phone", style = MaterialTheme.typography.titleLarge)
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    "Touch it to the back of your phone. If nothing happens, slide it around slowly until you feel a buzz.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                )
-            }
-        }
+        ReadHome(nfc, history, problem, onWrite, onBlueprints, onHistory)
         return
     }
 
@@ -135,8 +132,8 @@ fun ReadScreen(nfc: NfcController, onWrite: () -> Unit, onEdit: (List<RecordSpec
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            ScreenHeader("Read", "See what's on any tag", trailing = {
-                TextButton(onClick = nfc::clearRead) { Text("Clear") }
+            ScreenHeader("Read", "See what's on any tag", overline = "Scanned", accent = Accent.teal, trailing = {
+                TextButton(onClick = nfc::clearRead) { Text("Clear", color = Accent.teal) }
             })
         }
         item { ReadyPill() }
@@ -155,7 +152,7 @@ fun ReadScreen(nfc: NfcController, onWrite: () -> Unit, onEdit: (List<RecordSpec
                 }
             }
             else -> {
-                items(s.records) { RecordCard(it) }
+                itemsIndexed(s.records) { i, r -> RecordCard(r, emphasized = i == 0) }
                 item {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         FilledTonalButton(
@@ -179,6 +176,86 @@ fun ReadScreen(nfc: NfcController, onWrite: () -> Unit, onEdit: (List<RecordSpec
             }
         }
         item { TechnicalCard(s) }
+    }
+}
+
+/** The idle Read tab: a hero scan panel, quick actions, and recent tags. */
+@Composable
+private fun ReadHome(
+    nfc: NfcController,
+    history: HistoryStore,
+    problem: com.latch.nfc.Problem?,
+    onWrite: () -> Unit,
+    onBlueprints: () -> Unit,
+    onHistory: () -> Unit,
+) {
+    val entries by history.entries.collectAsState()
+    val recent = entries.take(3)
+    val x = extras
+    LazyColumn(
+        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 32.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        item { ScreenHeader("Latch", "Read, write and protect NFC tags", overline = "Ready", accent = Accent.teal) }
+        problem?.let { p -> item { ProblemCard(p) } }
+        item {
+            GradientPanel(x.tealGradient, Modifier.fillMaxWidth()) {
+                Column(
+                    Modifier.fillMaxWidth().padding(vertical = 28.dp, horizontal = 20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    PulseRing(Icons.Rounded.Nfc, color = Color.White, onColor = x.tealGradient.last(), diameter = 180.dp)
+                    Spacer(Modifier.height(18.dp))
+                    Text("Ready to scan", style = MaterialTheme.typography.headlineMedium, color = Color.White)
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Hold a tag to the back of your phone. If nothing happens, slide it around slowly until you feel a buzz.",
+                        style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.82f), textAlign = TextAlign.Center,
+                    )
+                }
+            }
+        }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                QuickAction(Icons.Rounded.Edit, "Write", Accent.fern, Modifier.weight(1f), onWrite)
+                QuickAction(Icons.Rounded.AutoAwesome, "Blueprints", Accent.amber, Modifier.weight(1f), onBlueprints)
+                QuickAction(Icons.Rounded.DocumentScanner, "Scan many", Accent.teal, Modifier.weight(1f)) { nfc.arm(Operation.ReadMany()) }
+            }
+        }
+        if (recent.isNotEmpty()) {
+            item {
+                Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Recent", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                    TextButton(onClick = onHistory) { Text("See all", color = Accent.teal) }
+                }
+            }
+            items(recent, key = { it.id }) { e ->
+                LatchCard {
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        IconBadge(e.action.icon, size = 36.dp, tint = e.action.accent)
+                        Spacer(Modifier.size(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(e.summary, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(
+                                listOfNotNull(e.action.name, e.tagType, DateUtils.getRelativeTimeSpanString(e.time).toString()).joinToString(" · "),
+                                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun QuickAction(icon: ImageVector, label: String, color: Color, modifier: Modifier, onClick: () -> Unit) {
+    LatchCard(modifier, onClick = onClick) {
+        Column(Modifier.fillMaxWidth().padding(vertical = 14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            IconBadge(icon, tint = color, size = 40.dp)
+            Spacer(Modifier.height(8.dp))
+            Text(label, style = MaterialTheme.typography.labelLarge)
+        }
     }
 }
 
@@ -251,7 +328,7 @@ private fun StatusChip(text: String, color: Color) {
 @Composable
 private fun TechnicalCard(s: TagSnapshot) {
     var open by rememberSaveable { mutableStateOf(false) }
-    Card(colors = surfaceCardColors()) {
+    LatchCard {
         Column(Modifier.fillMaxWidth()) {
             Row(
                 Modifier.fillMaxWidth().clickable { open = !open }.padding(horizontal = 18.dp, vertical = 14.dp),
@@ -295,19 +372,21 @@ private fun TechnicalCard(s: TagSnapshot) {
 }
 
 @Composable
-private fun RecordCard(r: ParsedRecord) {
+private fun RecordCard(r: ParsedRecord, emphasized: Boolean = false) {
     val context = LocalContext.current
     var reveal by rememberSaveable(r.secret) { mutableStateOf(false) }
     var unlocking by remember { mutableStateOf(false) }
     var unlocked by remember { mutableStateOf<String?>(null) }
-    Card(colors = surfaceCardColors()) {
+    LatchCard(emphasized = emphasized) {
         Column(Modifier.fillMaxWidth().padding(18.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconBadge(r.kind.icon, tint = r.kind.accent)
                 Spacer(Modifier.size(14.dp))
                 Column(Modifier.weight(1f)) {
                     Text(r.label.uppercase(), style = MaterialTheme.typography.labelMedium, color = r.kind.accent)
-                    SelectionContainer { Text(unlocked ?: r.value, style = MaterialTheme.typography.titleMedium) }
+                    SelectionContainer {
+                        Text(unlocked ?: r.value, style = if (emphasized) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.titleMedium)
+                    }
                 }
             }
             if (r.details.isNotEmpty() || r.secret != null) {
@@ -397,7 +476,7 @@ private fun UnlockDialog(sealed: ByteArray, onDismiss: () -> Unit, onUnlocked: (
 
 @Composable
 private fun NoticeCard(icon: ImageVector, title: String, body: String, action: (@Composable () -> Unit)? = null) {
-    Card(colors = surfaceCardColors()) {
+    LatchCard {
         Column(Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             IconBadge(icon, size = 56.dp)
             Spacer(Modifier.height(12.dp))

@@ -8,8 +8,15 @@ import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
+import com.latch.R
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -112,16 +119,69 @@ object Accent {
     val brick: Color @Composable get() = MaterialTheme.colorScheme.error
 }
 
+/**
+ * Kairos's type system: Bricolage Grotesque for display/headings, Hanken Grotesk for body/UI. Both are variable
+ * fonts, so each weight pins the `wght` axis. SIL Open Font License, see /licenses.
+ */
+private fun bricolage(w: Int) = Font(R.font.bricolage_grotesque, FontWeight(w), variationSettings = FontVariation.Settings(FontVariation.weight(w)))
+private fun hanken(w: Int) = Font(R.font.hanken_grotesk, FontWeight(w), variationSettings = FontVariation.Settings(FontVariation.weight(w)))
+val Bricolage = FontFamily(bricolage(500), bricolage(700), bricolage(800))
+val Hanken = FontFamily(hanken(400), hanken(500), hanken(600), hanken(700))
+
 private val Base = Typography()
 private val LatchType = Base.copy(
-    headlineLarge = Base.headlineLarge.copy(fontWeight = FontWeight.SemiBold, fontSize = 34.sp, letterSpacing = (-0.5).sp),
-    headlineMedium = Base.headlineMedium.copy(fontWeight = FontWeight.SemiBold, letterSpacing = (-0.25).sp),
-    headlineSmall = Base.headlineSmall.copy(fontWeight = FontWeight.SemiBold),
-    titleLarge = Base.titleLarge.copy(fontWeight = FontWeight.SemiBold),
-    titleMedium = Base.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-    labelLarge = Base.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-    labelMedium = Base.labelMedium.copy(fontWeight = FontWeight.SemiBold, letterSpacing = 0.8.sp),
+    displaySmall = Base.displaySmall.copy(fontFamily = Bricolage, fontWeight = FontWeight.ExtraBold, letterSpacing = (-1).sp),
+    headlineLarge = Base.headlineLarge.copy(fontFamily = Bricolage, fontWeight = FontWeight.ExtraBold, fontSize = 36.sp, letterSpacing = (-1).sp),
+    headlineMedium = Base.headlineMedium.copy(fontFamily = Bricolage, fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp),
+    headlineSmall = Base.headlineSmall.copy(fontFamily = Bricolage, fontWeight = FontWeight.Bold, letterSpacing = (-0.25).sp),
+    titleLarge = Base.titleLarge.copy(fontFamily = Bricolage, fontWeight = FontWeight.Bold),
+    titleMedium = Base.titleMedium.copy(fontFamily = Bricolage, fontWeight = FontWeight.Bold),
+    titleSmall = Base.titleSmall.copy(fontFamily = Hanken, fontWeight = FontWeight.SemiBold),
+    bodyLarge = Base.bodyLarge.copy(fontFamily = Hanken),
+    bodyMedium = Base.bodyMedium.copy(fontFamily = Hanken),
+    bodySmall = Base.bodySmall.copy(fontFamily = Hanken),
+    labelLarge = Base.labelLarge.copy(fontFamily = Hanken, fontWeight = FontWeight.SemiBold),
+    labelMedium = Base.labelMedium.copy(fontFamily = Hanken, fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
+    labelSmall = Base.labelSmall.copy(fontFamily = Hanken, fontWeight = FontWeight.SemiBold),
 )
+
+/** Kairos's atmosphere tokens (values copied from kairos ui/Theme.kt) plus bold gradient pairs per accent. */
+data class Extras(
+    val washTop: Color, val washBottom: Color,
+    val heroTop: Color, val heroBottom: Color,
+    val seg: Color, val onSeg: Color,
+    val shadow: Color, val line: Color,
+    val fernGradient: List<Color>, val tealGradient: List<Color>, val amberGradient: List<Color>, val brickGradient: List<Color>,
+)
+
+private val LightExtras = Extras(
+    washTop = Color(0xFFEDF2F3), washBottom = Color(0xFFF1F3EC),      // Kairos
+    heroTop = Color(0xFFEAF1F1), heroBottom = Color(0xFFF4F6F3),      // Kairos
+    seg = Color(0xFF5C7642), onSeg = Color(0xFFF3F2EF),               // Kairos segTop / onSeg
+    shadow = Color(0xFF1B2B31), line = Color(0x14202321),             // Kairos shadowSpot / cardBorder
+    fernGradient = listOf(Color(0xFF5C7642), Color(0xFF445734)),      // Kairos segTop → segBottom
+    tealGradient = listOf(Color(0xFF167C93), Color(0xFF074552)),      // Kairos water → Brand.Teal
+    amberGradient = listOf(Color(0xFFDE8521), Color(0xFFB0661A)),     // Kairos Amber → step darker
+    brickGradient = listOf(Color(0xFFB23A2E), Color(0xFF8A2A21)),     // Kairos Brick → step darker
+)
+
+private val DarkExtras = Extras(
+    washTop = Color(0xFF171C1E), washBottom = Color(0xFF1A1B17),      // Kairos
+    heroTop = Color(0xFF1E2528), heroBottom = Color(0xFF1D1C1E),      // Kairos
+    seg = Color(0xFF4E6A37), onSeg = Color(0xFFF1F1EE),               // Kairos
+    shadow = Color(0xFF000000), line = Color(0x1FF1F0F2),             // Kairos
+    fernGradient = listOf(Color(0xFF4E6A37), Color(0xFF3A5029)),      // Kairos dark seg
+    tealGradient = listOf(Color(0xFF167C93), Color(0xFF074552)),
+    amberGradient = listOf(Color(0xFFC9761C), Color(0xFF8F5314)),     // step: Amber, dimmed for dark
+    brickGradient = listOf(Color(0xFFB23A2E), Color(0xFF7A251D)),
+)
+
+val LocalExtras = staticCompositionLocalOf { LightExtras }
+val extras: Extras @Composable get() = LocalExtras.current
+
+/** The Kairos screen wash: faint teal at the top, neutral in the middle, faint fern at the bottom. */
+@Composable
+fun screenWash(): Brush = Brush.verticalGradient(listOf(extras.washTop, MaterialTheme.colorScheme.background, extras.washBottom))
 
 private val LatchShapes = Shapes(
     extraSmall = RoundedCornerShape(8.dp),
@@ -133,10 +193,13 @@ private val LatchShapes = Shapes(
 
 @Composable
 fun LatchTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = if (isSystemInDarkTheme()) Dark else Light,
-        typography = LatchType,
-        shapes = LatchShapes,
-        content = content,
-    )
+    val dark = isSystemInDarkTheme()
+    CompositionLocalProvider(LocalExtras provides if (dark) DarkExtras else LightExtras) {
+        MaterialTheme(
+            colorScheme = if (dark) Dark else Light,
+            typography = LatchType,
+            shapes = LatchShapes,
+            content = content,
+        )
+    }
 }

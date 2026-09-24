@@ -104,6 +104,14 @@ import com.latch.ui.components.ScreenHeader
 import com.latch.ui.components.icon
 import com.latch.ui.components.accent
 import com.latch.ui.theme.Accent
+import com.latch.ui.components.GradientPanel
+import com.latch.ui.components.LatchCard
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.layout
 import com.latch.ui.components.surfaceCardColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -121,6 +129,7 @@ class WriteState {
     internal var route by mutableStateOf<Route>(Route.Home)
     var draft by mutableStateOf(listOf<RecordSpec>())
     var autoArm by mutableStateOf(false)
+    fun openBlueprints() { route = Route.AllBlueprints }
 }
 
 @Composable
@@ -185,13 +194,24 @@ private fun WriteHome(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item(span = { GridItemSpan(maxLineSpan) }) { ScreenHeader("Write", "Build a tag, or start from a blueprint") }
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            ScreenHeader("Write", "Build a tag, or start from a blueprint", overline = "Create", accent = Accent.fern)
+        }
         item(span = { GridItemSpan(maxLineSpan) }) {
             SectionTitle("Blueprints", "Ready-made ideas. Tap one and you're halfway done.", action = "See all", onAction = onAllBlueprints)
         }
         item(span = { GridItemSpan(maxLineSpan) }) {
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(blueprints.take(8)) { b -> BlueprintCard(b, Modifier.width(210.dp)) { onBlueprint(b) } }
+            // Bleed the carousel to the screen edges so cards scroll in from the side instead of being clipped.
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 16.dp),
+                modifier = Modifier.layout { m, c ->
+                    val extra = 40.dp.roundToPx()
+                    val p = m.measure(c.copy(minWidth = c.maxWidth + extra, maxWidth = c.maxWidth + extra))
+                    layout(c.maxWidth, p.height) { p.place(-extra / 2, 0) }
+                },
+            ) {
+                items(blueprints.take(8)) { b -> BlueprintCard(b, Modifier.width(230.dp)) { onBlueprint(b) } }
             }
         }
         if (saved.isNotEmpty()) {
@@ -200,7 +220,7 @@ private fun WriteHome(
         }
         item(span = { GridItemSpan(maxLineSpan) }) { SectionTitle("Start from scratch", "Pick what the tag should do.") }
         items(RecordType.entries) { t ->
-            Card(onClick = { onType(t) }, colors = surfaceCardColors()) {
+            LatchCard(onClick = { onType(t) }) {
                 Column(Modifier.fillMaxWidth().padding(16.dp)) {
                     IconBadge(t.icon, tint = t.accent)
                     Spacer(Modifier.height(14.dp))
@@ -225,13 +245,20 @@ private fun SectionTitle(title: String, subtitle: String, action: String? = null
 
 @Composable
 private fun BlueprintCard(b: Blueprint, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Card(onClick = onClick, colors = surfaceCardColors(), modifier = modifier) {
-        Column(Modifier.fillMaxWidth().padding(16.dp)) {
-            IconBadge(b.icon, tint = b.group.accent)
-            Spacer(Modifier.height(12.dp))
-            Text(b.title, style = MaterialTheme.typography.titleMedium)
+    GradientPanel(b.group.gradient, modifier, onClick = onClick) {
+        Column(Modifier.fillMaxWidth().padding(18.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(44.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.18f)), contentAlignment = Alignment.Center) {
+                    Icon(b.icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                }
+                Spacer(Modifier.weight(1f))
+                Text(b.group.label.uppercase(), style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.75f))
+            }
+            Spacer(Modifier.height(16.dp))
+            Text(b.title, style = MaterialTheme.typography.titleLarge, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Spacer(Modifier.height(4.dp))
             Text(
-                b.pitch, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                b.pitch, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.85f),
                 maxLines = 3, overflow = TextOverflow.Ellipsis, minLines = 3,
             )
         }
@@ -240,7 +267,7 @@ private fun BlueprintCard(b: Blueprint, modifier: Modifier = Modifier, onClick: 
 
 @Composable
 private fun SavedRow(t: Template, onOpen: () -> Unit, onDelete: () -> Unit) {
-    Card(onClick = onOpen, colors = surfaceCardColors()) {
+    LatchCard(onClick = onOpen) {
         Row(Modifier.fillMaxWidth().padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             IconBadge(Icons.Rounded.Bookmark, size = 40.dp, tint = Accent.amber)
             Spacer(Modifier.size(12.dp))
@@ -370,7 +397,7 @@ private fun RecordEditor(
 ) {
     var showSecret by remember { mutableStateOf(false) }
     var pickingApp by remember { mutableStateOf(false) }
-    OutlinedCard {
+    LatchCard {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconBadge(spec.type.icon, size = 36.dp, tint = spec.type.accent)

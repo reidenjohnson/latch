@@ -32,6 +32,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.collectAsState
 import com.latch.ui.write.WriteState
+import com.latch.ui.theme.extras
+import com.latch.ui.theme.screenWash
+import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -82,10 +86,11 @@ fun LatchRoot(app: LatchApplication) {
     }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        modifier = Modifier.background(screenWash()),
+        containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
-            NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainerLow) {
+            NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
                 Tab.entries.forEach { t ->
                     NavigationBarItem(
                         selected = tab == t,
@@ -93,9 +98,10 @@ fun LatchRoot(app: LatchApplication) {
                         icon = { Icon(t.icon, contentDescription = null) },
                         label = { Text(t.label) },
                         colors = NavigationBarItemDefaults.colors(
-                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                            selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            selectedTextColor = MaterialTheme.colorScheme.primary, // Kairos: Fern = active nav
+                            // Kairos's brand moment: solid Fern pill, near-white icon.
+                            indicatorColor = extras.seg,
+                            selectedIconColor = extras.onSeg,
+                            selectedTextColor = MaterialTheme.colorScheme.primary,
                         ),
                     )
                 }
@@ -106,10 +112,13 @@ fun LatchRoot(app: LatchApplication) {
             if (availability != NfcAvailability.On) NfcBanner(availability)
             Box(Modifier.weight(1f)) {
                 when (tab) {
-                    Tab.Read -> ReadScreen(nfc, onWrite = { tab = Tab.Write }, onEdit = { specs ->
-                        app.handoff.pending.value = specs
-                        tab = Tab.Write
-                    })
+                    Tab.Read -> ReadScreen(
+                        nfc, app.history,
+                        onWrite = { tab = Tab.Write },
+                        onBlueprints = { writeState.openBlueprints(); tab = Tab.Write },
+                        onHistory = { tab = Tab.History },
+                        onEdit = { specs -> app.handoff.pending.value = specs; tab = Tab.Write },
+                    )
                     Tab.Write -> WriteScreen(writeState, nfc, app.templates, app.handoff)
                     Tab.Tools -> ToolsScreen(nfc)
                     Tab.History -> HistoryScreen(app.history, nfc)
