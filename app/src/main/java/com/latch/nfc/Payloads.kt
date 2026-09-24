@@ -78,6 +78,44 @@ object Payloads {
 }
 
 /**
+ * Bluetooth pairing record ("application/vnd.bluetooth.ep.oob"). The layout matches Android's parser
+ * (HandoverDataParser.parseBtOob): a 2-byte length (skipped by Android), a 6-byte address stored in reverse byte
+ * order, then EIR entries of [length][type][data]. Type 09h is Complete Local Name.
+ * https://android.googlesource.com/platform/packages/modules/Nfc/+/refs/heads/main/NfcNci/src/com/android/nfc/handover/HandoverDataParser.java
+ */
+object Bluetooth {
+    const val MIME_TYPE = "application/vnd.bluetooth.ep.oob"
+    private const val EIR_COMPLETE_LOCAL_NAME = 0x09
+    val MAC = Regex("^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$")
+
+    data class Device(val mac: String, val name: String?)
+
+    fun encode(mac: String, name: String): ByteArray {
+        val addr = mac.split(':', '-').map { it.toInt(16).toByte() }.reversed().toByteArray()
+        val eir = if (name.isBlank()) ByteArray(0) else {
+            val n = name.trim().toByteArray(Charsets.UTF_8)
+            byteArrayOf((n.size + 1).toByte(), EIR_COMPLETE_LOCAL_NAME.toByte()) + n
+        }
+        val total = 2 + addr.size + eir.size
+        return byteArrayOf(total.toByte(), (total shr 8).toByte()) + addr + eir // length is little-endian
+    }
+
+    fun decode(p: ByteArray): Device {
+        val mac = p.copyOfRange(2, 8).reversed().joinToString(":") { "%02X".format(it) }
+        var name: String? = null
+        var i = 8
+        while (i + 1 < p.size) {
+            val len = p[i].toInt() and 0xFF
+            if (len == 0 || i + 1 + len > p.size) break
+            val type = p[i + 1].toInt() and 0xFF
+            if (type == 0x09 || (type == 0x08 && name == null)) name = String(p, i + 2, len - 1, Charsets.UTF_8)
+            i += 1 + len
+        }
+        return Device(mac, name)
+    }
+}
+
+/**
  * Wi-Fi security options Android's tag handler can actually connect with. Android maps WPA and WPA2 PSK
  * to the same key management, and has no WPA3-only (SAE) option, so WPA3-only networks aren't offered.
  * Source: packages/modules/Nfc NfcWifiProtectedSetup.populateAllowedKeyManagement

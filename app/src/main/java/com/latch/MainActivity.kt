@@ -1,4 +1,4 @@
-package com.latch
+﻿package com.latch
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -31,7 +31,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         adapter = NfcAdapter.getDefaultAdapter(this)
         setContent {
-            LatchTheme { LatchRoot(latch.nfc, latch.history) }
+            LatchTheme { LatchRoot(latch) }
         }
     }
 
@@ -54,7 +54,7 @@ class MainActivity : ComponentActivity() {
 
     /**
      * Reader mode sends every tag straight to Latch while it's in the foreground. The system's
-     * "open with…" dispatch is bypassed, which is what makes taps consistent.
+     * "open with..." dispatch is bypassed, which is what makes taps consistent.
      */
     private fun startReaderMode() {
         val a = adapter ?: return

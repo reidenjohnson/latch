@@ -35,9 +35,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.latch.data.HistoryStore
+import com.latch.LatchApplication
 import com.latch.nfc.NfcAvailability
-import com.latch.nfc.NfcController
 import com.latch.nfc.SheetState
 import com.latch.ui.components.ScanSheet
 import com.latch.ui.history.HistoryScreen
@@ -53,7 +52,8 @@ enum class Tab(val label: String, val icon: ImageVector) {
 }
 
 @Composable
-fun LatchRoot(nfc: NfcController, history: HistoryStore) {
+fun LatchRoot(app: LatchApplication) {
+    val nfc = app.nfc
     var tab by rememberSaveable { mutableStateOf(Tab.Read) }
     val sheet by nfc.sheet.collectAsState()
     val availability by nfc.availability.collectAsState()
@@ -84,16 +84,21 @@ fun LatchRoot(nfc: NfcController, history: HistoryStore) {
             if (availability != NfcAvailability.On) NfcBanner(availability)
             Box(Modifier.weight(1f)) {
                 when (tab) {
-                    Tab.Read -> ReadScreen(nfc, onWrite = { tab = Tab.Write })
-                    Tab.Write -> WriteScreen(nfc)
+                    Tab.Read -> ReadScreen(nfc, onWrite = { tab = Tab.Write }, onEdit = { specs ->
+                        app.handoff.pending.value = specs
+                        tab = Tab.Write
+                    })
+                    Tab.Write -> WriteScreen(nfc, app.templates, app.handoff)
                     Tab.Tools -> ToolsScreen(nfc)
-                    Tab.History -> HistoryScreen(history, nfc)
+                    Tab.History -> HistoryScreen(app.history, nfc)
                 }
             }
         }
     }
 
-    if (sheet !is SheetState.Hidden) ScanSheet(sheet, onDismiss = nfc::dismiss)
+    if (sheet !is SheetState.Hidden) {
+        ScanSheet(sheet, onDismiss = nfc::dismiss, onPassword = nfc::providePassword, onFinish = nfc::finish)
+    }
 }
 
 @Composable

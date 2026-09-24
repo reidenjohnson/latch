@@ -12,7 +12,14 @@ object NdefParser {
         message?.records?.map { parse(it, context) } ?: emptyList()
 
     fun parse(record: NdefRecord, context: Context): ParsedRecord =
-        runCatching { parseRecord(record, context) }.getOrElse { unknown(record) }
+        runCatching { parseRecord(record, context) }.getOrElse { unknown(record) }.copy(raw = raw(record))
+
+    private fun raw(r: NdefRecord) = RawRecord(
+        tnf = r.tnf.toInt(),
+        type = String(r.type, Charsets.US_ASCII).ifEmpty { "(none)" },
+        payloadSize = r.payload.size,
+        payloadHex = r.payload.take(512).joinToString(" ") { "%02X".format(it) } + if (r.payload.size > 512) " …" else "",
+    )
 
     /** One-line description of a message, e.g. "Website · example.com". */
     fun summary(records: List<ParsedRecord>): String {
@@ -100,6 +107,7 @@ object NdefParser {
         val type = String(r.type, Charsets.US_ASCII).lowercase()
         return when {
             type == WifiTlv.MIME_TYPE -> wifi(r.payload)
+            type == Bluetooth.MIME_TYPE -> bluetooth(r.payload)
             type == "text/vcard" || type == "text/x-vcard" -> vcard(String(r.payload, Charsets.UTF_8))
             type.startsWith("text/") -> {
                 val body = String(r.payload, Charsets.UTF_8)
@@ -151,8 +159,23 @@ object NdefParser {
         )
     }
 
+    private fun bluetooth(payload: ByteArray): ParsedRecord {
+        val bt = Bluetooth.decode(payload)
+        return ParsedRecord(
+            RecordKind.Bluetooth, "Bluetooth device", bt.name ?: bt.mac,
+            details = listOfNotNull("Address" to bt.mac),
+            copyText = bt.mac,
+        )
+    }
+
     private fun external(r: NdefRecord, context: Context): ParsedRecord {
         val type = String(r.type, Charsets.US_ASCII)
+        if (type == SecretBox.TYPE) {
+            return ParsedRecord(
+                RecordKind.Secret, "Locked note", "Encrypted with a password",
+                details = listOf("Protection" to "AES-256-GCM"), sealed = r.payload,
+            )
+        }
         if (type == "android.com:pkg") {
             val pkg = String(r.payload, Charsets.US_ASCII)
             val pm = context.packageManager

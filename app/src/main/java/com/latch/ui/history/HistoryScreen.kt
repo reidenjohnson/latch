@@ -1,6 +1,9 @@
 package com.latch.ui.history
 
+import android.content.Context
+import android.content.Intent
 import android.text.format.DateUtils
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -44,6 +47,7 @@ import com.latch.ui.components.surfaceCardColors
 @Composable
 fun HistoryScreen(history: HistoryStore, nfc: NfcController) {
     val entries by history.entries.collectAsState()
+    val context = LocalContext.current
     var selected by remember { mutableStateOf<HistoryEntry?>(null) }
     var confirmClear by remember { mutableStateOf(false) }
 
@@ -70,6 +74,7 @@ fun HistoryScreen(history: HistoryStore, nfc: NfcController) {
     ) {
         item {
             ScreenHeader("History", "Everything you've read and written", trailing = {
+                TextButton(onClick = { exportCsv(context, entries) }) { Text("Export") }
                 TextButton(onClick = { confirmClear = true }) { Text("Clear") }
             })
         }
@@ -119,6 +124,19 @@ private fun HistoryRow(e: HistoryEntry, onClick: () -> Unit) {
             }
         }
     }
+}
+
+private fun exportCsv(context: Context, entries: List<HistoryEntry>) {
+    val csv = buildString {
+        appendLine("time,action,tag type,content")
+        entries.forEach { e ->
+            val time = java.time.Instant.ofEpochMilli(e.time).toString()
+            appendLine("$time,${e.action},${e.tagType.orEmpty()},\"${e.summary.replace("\"", "\"\"")}\"")
+        }
+    }
+    val send = Intent(Intent.ACTION_SEND).setType("text/csv")
+        .putExtra(Intent.EXTRA_SUBJECT, "Latch history").putExtra(Intent.EXTRA_TEXT, csv)
+    context.startActivity(Intent.createChooser(send, "Export history"))
 }
 
 private fun subtitle(e: HistoryEntry): String {

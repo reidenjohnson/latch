@@ -57,9 +57,39 @@ import com.latch.data.HistoryAction
 import com.latch.nfc.Operation
 import com.latch.nfc.Problem
 import com.latch.nfc.RecordKind
+import com.latch.nfc.RecordType
+import androidx.compose.material.icons.rounded.AlternateEmail
+import androidx.compose.material.icons.rounded.Bluetooth
+import androidx.compose.material.icons.rounded.EnhancedEncryption
+import androidx.compose.material.icons.rounded.Insights
+import androidx.compose.material.icons.rounded.MedicalServices
+import androidx.compose.material.icons.rounded.Memory
+import androidx.compose.material.icons.rounded.Password
+import androidx.compose.material.icons.rounded.Terminal
+
+val RecordType.icon: ImageVector
+    get() = when (this) {
+        RecordType.Link -> Icons.Rounded.Link
+        RecordType.Social -> Icons.Rounded.AlternateEmail
+        RecordType.Text -> Icons.AutoMirrored.Rounded.Notes
+        RecordType.WiFi -> Icons.Rounded.Wifi
+        RecordType.Contact -> Icons.Rounded.ContactPage
+        RecordType.Phone -> Icons.Rounded.Call
+        RecordType.Sms -> Icons.Rounded.Sms
+        RecordType.Email -> Icons.Rounded.Email
+        RecordType.Location -> Icons.Rounded.Place
+        RecordType.App -> Icons.Rounded.Apps
+        RecordType.Bluetooth -> Icons.Rounded.Bluetooth
+        RecordType.Emergency -> Icons.Rounded.MedicalServices
+        RecordType.Secret -> Icons.Rounded.EnhancedEncryption
+        RecordType.LiveLink -> Icons.Rounded.Insights
+        RecordType.Custom -> Icons.Rounded.DataObject
+    }
 
 val RecordKind.icon: ImageVector
     get() = when (this) {
+        RecordKind.Bluetooth -> Icons.Rounded.Bluetooth
+        RecordKind.Secret -> Icons.Rounded.EnhancedEncryption
         RecordKind.Link -> Icons.Rounded.Link
         RecordKind.Text -> Icons.AutoMirrored.Rounded.Notes
         RecordKind.WiFi -> Icons.Rounded.Wifi
@@ -85,10 +115,15 @@ val HistoryAction.icon: ImageVector
 
 val Operation.icon: ImageVector
     get() = when (this) {
-        is Operation.Write -> Icons.Rounded.Edit
-        Operation.Erase -> Icons.Rounded.DeleteSweep
+        is Operation.Write, is Operation.Batch -> Icons.Rounded.Edit
+        is Operation.Erase -> Icons.Rounded.DeleteSweep
         Operation.CopySource, is Operation.CopyTarget -> Icons.Rounded.ContentCopy
         Operation.MakeReadOnly -> Icons.Rounded.Lock
+        is Operation.ReadMany -> Icons.Rounded.Nfc
+        Operation.Dump -> Icons.Rounded.Memory
+        is Operation.SetPassword, is Operation.RemovePassword -> Icons.Rounded.Password
+        is Operation.Counter -> Icons.Rounded.Insights
+        is Operation.Raw -> Icons.Rounded.Terminal
     }
 
 @Composable
