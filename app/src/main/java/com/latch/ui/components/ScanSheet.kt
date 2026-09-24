@@ -94,8 +94,8 @@ private fun Waiting(state: SheetState.Waiting, onCancel: () -> Unit, onPassword:
     PulseRing(
         icon = state.op.icon,
         diameter = 168.dp,
-        color = if (failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-        onColor = if (failed) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onPrimary,
+        color = if (failed) MaterialTheme.colorScheme.error else state.op.accent,
+        onColor = MaterialTheme.colorScheme.surface,
     )
     Spacer(Modifier.height(4.dp))
     Text(title, style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
@@ -109,7 +109,7 @@ private fun Waiting(state: SheetState.Waiting, onCancel: () -> Unit, onPassword:
         }
     }
     state.note?.let {
-        Text(it, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.tertiary, textAlign = TextAlign.Center)
+        Text(it, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, textAlign = TextAlign.Center)
     }
     state.problem?.let { problem ->
         Spacer(Modifier.height(4.dp))
@@ -142,7 +142,7 @@ private fun Done(state: SheetState.Done, onClose: () -> Unit) {
         if (state.report == null) { delay(2600); onClose() } // reports stay open so they can be shared
     }
     Icon(
-        Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary,
+        Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, // Fern = success
         modifier = Modifier.padding(top = 12.dp, bottom = 4.dp).size(88.dp).scale(scale),
     )
     Text(state.title, style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)

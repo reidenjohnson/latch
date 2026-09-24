@@ -113,7 +113,7 @@ fun NetworkPicker(onDismiss: () -> Unit, onPick: (NearbyNetwork) -> Unit) {
                                 Spacer(Modifier.size(12.dp))
                                 Column(Modifier.weight(1f)) {
                                     Text(n.ssid, style = MaterialTheme.typography.titleSmall)
-                                    if (n.current) Text("Connected", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.tertiary)
+                                    if (n.current) Text("Connected", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                                 }
                             }
                         }

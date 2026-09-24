@@ -17,14 +17,26 @@ import androidx.compose.material.icons.rounded.Speaker
 import androidx.compose.material.icons.rounded.StarRate
 import androidx.compose.material.icons.rounded.ThumbUp
 import androidx.compose.material.icons.rounded.Wifi
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.latch.ui.theme.Accent
 import com.latch.nfc.Mirror
 import com.latch.nfc.RecordSpec
 import com.latch.nfc.RecordType
 import com.latch.nfc.SocialPlatform
 import com.latch.nfc.WifiSecurity
 
-enum class BlueprintGroup(val label: String) { Home("Home"), Share("Share"), Safety("Safety"), Everyday("Everyday"), Power("Power moves") }
+enum class BlueprintGroup(val label: String) {
+    Home("Home"), Share("Share"), Safety("Safety"), Everyday("Everyday"), Power("Power moves");
+
+    val accent: Color
+        @Composable get() = when (this) {
+            Home -> Accent.fern
+            Share, Everyday -> Accent.teal
+            Safety, Power -> Accent.amber
+        }
+}
 
 /**
  * Ready-made tag ideas. Each one pre-fills the composer. If nothing personal is needed, it goes straight to the scan.

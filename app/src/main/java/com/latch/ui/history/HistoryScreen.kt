@@ -42,6 +42,8 @@ import com.latch.nfc.Operation
 import com.latch.ui.components.IconBadge
 import com.latch.ui.components.ScreenHeader
 import com.latch.ui.components.icon
+import com.latch.ui.components.accent
+import com.latch.ui.theme.Accent
 import com.latch.ui.components.surfaceCardColors
 
 @Composable
@@ -55,7 +57,7 @@ fun HistoryScreen(history: HistoryStore, nfc: NfcController) {
         Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
             ScreenHeader("History", "Everything you've read and written")
             Column(Modifier.fillMaxWidth().weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                IconBadge(Icons.Rounded.History, size = 72.dp)
+                IconBadge(Icons.Rounded.History, size = 72.dp, tint = Accent.teal)
                 Spacer(Modifier.height(16.dp))
                 Text("Nothing yet", style = MaterialTheme.typography.titleLarge)
                 Text(
@@ -116,7 +118,7 @@ fun HistoryScreen(history: HistoryStore, nfc: NfcController) {
 private fun HistoryRow(e: HistoryEntry, onClick: () -> Unit) {
     Card(onClick = onClick, colors = surfaceCardColors()) {
         Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconBadge(e.action.icon, size = 40.dp)
+            IconBadge(e.action.icon, size = 40.dp, tint = e.action.accent)
             Spacer(Modifier.size(14.dp))
             Column(Modifier.weight(1f)) {
                 Text(e.summary, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)

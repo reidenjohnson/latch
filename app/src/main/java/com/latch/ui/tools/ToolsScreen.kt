@@ -55,6 +55,7 @@ import com.latch.nfc.Records
 import com.latch.ui.components.IconBadge
 import com.latch.ui.components.ScreenHeader
 import com.latch.ui.components.surfaceCardColors
+import com.latch.ui.theme.Accent
 
 private enum class Dialog { Lock, SetPassword, RemovePassword, Counter, Raw }
 
@@ -68,13 +69,13 @@ fun ToolsScreen(nfc: NfcController) {
     ) {
         item { ScreenHeader("Tools", "Everything, free. No subscriptions.") }
         item { Section("Everyday") }
-        item { ToolCard(Icons.Rounded.ContentCopy, "Copy a tag", "Tap the original, then a new tag. Everything is copied over.") { nfc.arm(Operation.CopySource) } }
-        item { ToolCard(Icons.Rounded.DocumentScanner, "Scan many", "Tap tag after tag, then export the list as a spreadsheet.") { nfc.arm(Operation.ReadMany()) } }
-        item { ToolCard(Icons.Rounded.DeleteSweep, "Erase a tag", "Wipe it clean so you can reuse it.") { nfc.arm(Operation.Erase()) } }
+        item { ToolCard(Icons.Rounded.ContentCopy, "Copy a tag", "Tap the original, then a new tag. Everything is copied over.", tint = Accent.teal) { nfc.arm(Operation.CopySource) } }
+        item { ToolCard(Icons.Rounded.DocumentScanner, "Scan many", "Tap tag after tag, then export the list as a spreadsheet.", tint = Accent.teal) { nfc.arm(Operation.ReadMany()) } }
+        item { ToolCard(Icons.Rounded.DeleteSweep, "Erase a tag", "Wipe it clean so you can reuse it.", tint = Accent.amber) { nfc.arm(Operation.Erase()) } }
 
         item { Section("Protect") }
-        item { ToolCard(Icons.Rounded.Password, "Password-protect", "Anyone can still read it, but only you can change or erase it.") { dialog = Dialog.SetPassword } }
-        item { ToolCard(Icons.Rounded.LockOpen, "Remove a password", "Open a protected tag back up.") { dialog = Dialog.RemovePassword } }
+        item { ToolCard(Icons.Rounded.Password, "Password-protect", "Anyone can still read it, but only you can change or erase it.", tint = Accent.fern) { dialog = Dialog.SetPassword } }
+        item { ToolCard(Icons.Rounded.LockOpen, "Remove a password", "Open a protected tag back up.", tint = Accent.fern) { dialog = Dialog.RemovePassword } }
         item {
             ToolCard(Icons.Rounded.Lock, "Lock forever", "Make it permanently read-only. Can never be undone.", tint = MaterialTheme.colorScheme.error) {
                 dialog = Dialog.Lock
@@ -82,9 +83,9 @@ fun ToolsScreen(nfc: NfcController) {
         }
 
         item { Section("Advanced") }
-        item { ToolCard(Icons.Rounded.Insights, "Scan counter", "Have the chip count how many times it's been read.") { dialog = Dialog.Counter } }
-        item { ToolCard(Icons.Rounded.Memory, "Read memory", "See every page of the chip in hex, then share or save it.") { nfc.arm(Operation.Dump) } }
-        item { ToolCard(Icons.Rounded.Terminal, "Send commands", "Talk to the chip directly with raw hex commands.") { dialog = Dialog.Raw } }
+        item { ToolCard(Icons.Rounded.Insights, "Scan counter", "Have the chip count how many times it's been read.", tint = Accent.amber) { dialog = Dialog.Counter } }
+        item { ToolCard(Icons.Rounded.Memory, "Read memory", "See every page of the chip in hex, then share or save it.", tint = Accent.teal) { nfc.arm(Operation.Dump) } }
+        item { ToolCard(Icons.Rounded.Terminal, "Send commands", "Talk to the chip directly with raw hex commands.", tint = Accent.amber) { dialog = Dialog.Raw } }
         item { TipsCard() }
     }
 
@@ -126,7 +127,7 @@ private fun TipsCard() {
     Card(colors = surfaceCardColors(), modifier = Modifier.padding(top = 8.dp)) {
         Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.Lightbulb, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Icon(Icons.Rounded.Lightbulb, contentDescription = null, tint = Accent.amber)
                 Spacer(Modifier.size(10.dp))
                 Text("For reliable taps", style = MaterialTheme.typography.titleMedium)
             }

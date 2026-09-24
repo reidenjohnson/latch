@@ -39,12 +39,12 @@ private val Light = lightColorScheme(
     onPrimaryContainer = Color(0xFF2B3A1E),    // step: deep Fern
     secondary = Brand.Teal,
     onSecondary = Color(0xFFFFFFFF),
-    secondaryContainer = Color(0xFFE2EAD8),    // selected chips share the Fern container (Kairos: Fern = active)
-    onSecondaryContainer = Color(0xFF2B3A1E),
-    tertiary = Brand.Fern,                     // Kairos: Fern = Good / "up" (success)
+    secondaryContainer = Color(0xFFDCEEF2),    // step: pale Teal (selected chips, tonal buttons)
+    onSecondaryContainer = Color(0xFF074552),  // Kairos Brand.Teal
+    tertiary = Brand.Amber,
     onTertiary = Color(0xFFFFFFFF),
-    tertiaryContainer = Color(0xFFE2EAD8),
-    onTertiaryContainer = Color(0xFF2B3A1E),
+    tertiaryContainer = Color(0xFFFBE8D2),     // step: pale Amber
+    onTertiaryContainer = Color(0xFF5A3208),   // step: deep Amber
     background = Brand.Smoke,
     onBackground = Color(0xFF1E201D),          // Kairos text
     surface = Color(0xFFFFFFFF),               // Kairos surface
@@ -72,12 +72,12 @@ private val Dark = darkColorScheme(
     onPrimaryContainer = Color(0xFFD7E6C4),    // step: pale Fern
     secondary = Brand.TealLift,
     onSecondary = Color(0xFF0E100E),
-    secondaryContainer = Color(0xFF3A5029),
-    onSecondaryContainer = Color(0xFFD7E6C4),
-    tertiary = Brand.FernLift,
+    secondaryContainer = Color(0xFF074552),    // Kairos Brand.Teal
+    onSecondaryContainer = Color(0xFFCDE9F0),  // step: pale Teal
+    tertiary = Brand.AmberLift,
     onTertiary = Color(0xFF0E100E),
-    tertiaryContainer = Color(0xFF3A5029),
-    onTertiaryContainer = Color(0xFFD7E6C4),
+    tertiaryContainer = Color(0xFF4A2E0C),     // step: deep Amber
+    onTertiaryContainer = Color(0xFFFFDDB8),   // step: pale Amber
     background = Color(0xFF19181A),            // Kairos bg
     onBackground = Color(0xFFECEBEC),          // Kairos text
     surface = Color(0xFF232224),               // Kairos surface
@@ -98,9 +98,18 @@ private val Dark = darkColorScheme(
     onErrorContainer = Color(0xFFF5C9C1),      // step: pale Brick
 )
 
-/** Amber is Kairos's minority highlight. Exposed for accents like warnings. */
-object LatchAccent {
-    @Composable fun amber() = if (isSystemInDarkTheme()) Brand.AmberLift else Brand.Amber
+/**
+ * What each brand color means in Latch (target balance like Kairos: ~40 Fern / ~40 Teal / ~20 Amber):
+ *   Fern  = writing, success, people (Write, verified, Writable, Genuine, contacts)
+ *   Teal  = reading, links, connections (Read tab, Wi-Fi, Bluetooth, social, apps, selected chips)
+ *   Amber = highlights and power features (Blueprints, passwords, live links, locked notes, warnings)
+ *   Brick = destructive or failed only (Lock forever, errors)
+ */
+object Accent {
+    val fern: Color @Composable get() = MaterialTheme.colorScheme.primary
+    val teal: Color @Composable get() = MaterialTheme.colorScheme.secondary
+    val amber: Color @Composable get() = MaterialTheme.colorScheme.tertiary
+    val brick: Color @Composable get() = MaterialTheme.colorScheme.error
 }
 
 private val Base = Typography()

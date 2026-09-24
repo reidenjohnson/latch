@@ -92,6 +92,8 @@ import com.latch.ui.components.ProblemCard
 import com.latch.ui.components.PulseRing
 import com.latch.ui.components.ScreenHeader
 import com.latch.ui.components.icon
+import com.latch.ui.components.accent
+import com.latch.ui.theme.Accent
 import com.latch.ui.components.surfaceCardColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -113,7 +115,7 @@ fun ReadScreen(nfc: NfcController, onWrite: () -> Unit, onEdit: (List<RecordSpec
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                PulseRing(Icons.Rounded.Nfc)
+                PulseRing(Icons.Rounded.Nfc, color = Accent.teal, onColor = MaterialTheme.colorScheme.surface)
                 Spacer(Modifier.height(28.dp))
                 Text("Hold a tag to your phone", style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.height(6.dp))
@@ -184,11 +186,11 @@ fun ReadScreen(nfc: NfcController, onWrite: () -> Unit, onEdit: (List<RecordSpec
 private fun ReadyPill() {
     val t = rememberInfiniteTransition(label = "ready")
     val a by t.animateFloat(0.3f, 1f, infiniteRepeatable(tween(900), RepeatMode.Reverse), label = "a")
-    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer) {
+    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.secondaryContainer) {
         Row(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(8.dp).alpha(a).clip(CircleShape).background(MaterialTheme.colorScheme.primary))
+            Box(Modifier.size(8.dp).alpha(a).clip(CircleShape).background(Accent.teal))
             Spacer(Modifier.size(10.dp))
-            Text("Ready. Tap another tag anytime.", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onPrimaryContainer)
+            Text("Ready. Tap another tag anytime.", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSecondaryContainer)
         }
     }
 }
@@ -200,7 +202,7 @@ private fun TagBanner(s: TagSnapshot) {
     Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceContainerHigh) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.Nfc, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                Icon(Icons.Rounded.Nfc, contentDescription = null, tint = Accent.teal, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.size(8.dp))
                 Text(s.chip ?: s.typeLabel, style = MaterialTheme.typography.titleSmall)
                 s.capacity?.let { cap ->
@@ -210,21 +212,21 @@ private fun TagBanner(s: TagSnapshot) {
             }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 when (s.writable) {
-                    true -> StatusChip("Writable", MaterialTheme.colorScheme.tertiary)
-                    false -> StatusChip("Locked", MaterialTheme.colorScheme.error)
-                    null -> if (s.supported) StatusChip("Not formatted", MaterialTheme.colorScheme.primary)
+                    true -> StatusChip("Writable", Accent.fern)
+                    false -> StatusChip("Locked", Accent.brick)
+                    null -> if (s.supported) StatusChip("Not formatted", Accent.amber)
                 }
                 val n = s.ntag
                 when (n?.genuine) {
-                    true -> StatusChip("Genuine NXP", MaterialTheme.colorScheme.tertiary)
-                    false -> StatusChip("Signature failed", MaterialTheme.colorScheme.error)
+                    true -> StatusChip("Genuine NXP", Accent.fern)
+                    false -> StatusChip("Signature failed", Accent.brick)
                     null -> Unit
                 }
                 n?.config?.let { c ->
-                    if (c.passwordProtected) StatusChip(if (c.readProtected) "Password: read+write" else "Password", MaterialTheme.colorScheme.primary)
-                    if (c.mirrorEnabled) StatusChip("Live link", MaterialTheme.colorScheme.primary)
+                    if (c.passwordProtected) StatusChip(if (c.readProtected) "Password: read+write" else "Password", Accent.amber)
+                    if (c.mirrorEnabled) StatusChip("Live link", Accent.amber)
                 }
-                n?.counter?.let { StatusChip("$it scans", MaterialTheme.colorScheme.primary) }
+                n?.counter?.let { StatusChip("$it scans", Accent.teal) }
                 if (s.chip != null) StatusChip(s.typeLabel, MaterialTheme.colorScheme.onSurfaceVariant)
             }
             s.capacity?.let { cap ->
@@ -301,10 +303,10 @@ private fun RecordCard(r: ParsedRecord) {
     Card(colors = surfaceCardColors()) {
         Column(Modifier.fillMaxWidth().padding(18.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconBadge(r.kind.icon)
+                IconBadge(r.kind.icon, tint = r.kind.accent)
                 Spacer(Modifier.size(14.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(r.label.uppercase(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    Text(r.label.uppercase(), style = MaterialTheme.typography.labelMedium, color = r.kind.accent)
                     SelectionContainer { Text(unlocked ?: r.value, style = MaterialTheme.typography.titleMedium) }
                 }
             }

@@ -102,6 +102,8 @@ import androidx.activity.result.PickVisualMediaRequest
 import com.latch.ui.components.IconBadge
 import com.latch.ui.components.ScreenHeader
 import com.latch.ui.components.icon
+import com.latch.ui.components.accent
+import com.latch.ui.theme.Accent
 import com.latch.ui.components.surfaceCardColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -200,7 +202,7 @@ private fun WriteHome(
         items(RecordType.entries) { t ->
             Card(onClick = { onType(t) }, colors = surfaceCardColors()) {
                 Column(Modifier.fillMaxWidth().padding(16.dp)) {
-                    IconBadge(t.icon)
+                    IconBadge(t.icon, tint = t.accent)
                     Spacer(Modifier.height(14.dp))
                     Text(t.title, style = MaterialTheme.typography.titleMedium)
                     Text(t.blurb, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -217,7 +219,7 @@ private fun SectionTitle(title: String, subtitle: String, action: String? = null
             Text(title, style = MaterialTheme.typography.titleLarge)
             Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        if (action != null) TextButton(onClick = onAction) { Text(action) }
+        if (action != null) TextButton(onClick = onAction) { Text(action, color = Accent.teal) }
     }
 }
 
@@ -225,7 +227,7 @@ private fun SectionTitle(title: String, subtitle: String, action: String? = null
 private fun BlueprintCard(b: Blueprint, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Card(onClick = onClick, colors = surfaceCardColors(), modifier = modifier) {
         Column(Modifier.fillMaxWidth().padding(16.dp)) {
-            IconBadge(b.icon)
+            IconBadge(b.icon, tint = b.group.accent)
             Spacer(Modifier.height(12.dp))
             Text(b.title, style = MaterialTheme.typography.titleMedium)
             Text(
@@ -240,7 +242,7 @@ private fun BlueprintCard(b: Blueprint, modifier: Modifier = Modifier, onClick: 
 private fun SavedRow(t: Template, onOpen: () -> Unit, onDelete: () -> Unit) {
     Card(onClick = onOpen, colors = surfaceCardColors()) {
         Row(Modifier.fillMaxWidth().padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconBadge(Icons.Rounded.Bookmark, size = 40.dp)
+            IconBadge(Icons.Rounded.Bookmark, size = 40.dp, tint = Accent.amber)
             Spacer(Modifier.size(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(t.name, style = MaterialTheme.typography.titleSmall)
@@ -371,7 +373,7 @@ private fun RecordEditor(
     OutlinedCard {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconBadge(spec.type.icon, size = 36.dp)
+                IconBadge(spec.type.icon, size = 36.dp, tint = spec.type.accent)
                 Spacer(Modifier.size(10.dp))
                 Column(Modifier.weight(1f)) {
                     Text(spec.type.title, style = MaterialTheme.typography.titleMedium)
@@ -531,7 +533,7 @@ private fun SizeMeter(bytes: Int?) {
         }
     }
     Row(Modifier.padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        Icon(Icons.Rounded.Memory, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+        Icon(Icons.Rounded.Memory, contentDescription = null, tint = Accent.teal, modifier = Modifier.size(18.dp))
         Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
@@ -545,7 +547,7 @@ private fun TypePicker(onDismiss: () -> Unit, onPick: (RecordType) -> Unit) {
             LazyColumn {
                 items(RecordType.entries) { t ->
                     Row(Modifier.fillMaxWidth().clickable { onPick(t) }.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                        IconBadge(t.icon, size = 36.dp)
+                        IconBadge(t.icon, size = 36.dp, tint = t.accent)
                         Spacer(Modifier.size(12.dp))
                         Column {
                             Text(t.title, style = MaterialTheme.typography.titleSmall)

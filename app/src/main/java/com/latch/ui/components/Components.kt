@@ -58,6 +58,7 @@ import com.latch.nfc.Operation
 import com.latch.nfc.Problem
 import com.latch.nfc.RecordKind
 import com.latch.nfc.RecordType
+import com.latch.ui.theme.Accent
 import androidx.compose.material.icons.rounded.AlternateEmail
 import androidx.compose.material.icons.rounded.Bluetooth
 import androidx.compose.material.icons.rounded.EnhancedEncryption
@@ -124,6 +125,39 @@ val Operation.icon: ImageVector
         is Operation.SetPassword, is Operation.RemovePassword -> Icons.Rounded.Password
         is Operation.Counter -> Icons.Rounded.Insights
         is Operation.Raw -> Icons.Rounded.Terminal
+    }
+
+// ---- Color roles (see Accent in Theme.kt for the meaning of each color)
+
+val RecordType.accent: Color
+    @Composable get() = when (this) {
+        RecordType.Link, RecordType.Social, RecordType.WiFi, RecordType.Bluetooth, RecordType.App -> Accent.teal
+        RecordType.Text, RecordType.Contact, RecordType.Phone, RecordType.Sms, RecordType.Email, RecordType.Location -> Accent.fern
+        RecordType.Emergency, RecordType.Secret, RecordType.LiveLink, RecordType.Custom -> Accent.amber
+    }
+
+val RecordKind.accent: Color
+    @Composable get() = when (this) {
+        RecordKind.Link, RecordKind.WiFi, RecordKind.Bluetooth, RecordKind.App -> Accent.teal
+        RecordKind.Text, RecordKind.Contact, RecordKind.Phone, RecordKind.Sms, RecordKind.Email, RecordKind.Location -> Accent.fern
+        RecordKind.Secret, RecordKind.Data, RecordKind.Unknown -> Accent.amber
+        RecordKind.Empty -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+val HistoryAction.accent: Color
+    @Composable get() = when (this) {
+        HistoryAction.Read, HistoryAction.Copy -> Accent.teal
+        HistoryAction.Write -> Accent.fern
+        HistoryAction.Erase -> Accent.amber
+        HistoryAction.Lock -> Accent.brick
+    }
+
+val Operation.accent: Color
+    @Composable get() = when (this) {
+        is Operation.Write, is Operation.Batch -> Accent.fern
+        Operation.CopySource, is Operation.CopyTarget, is Operation.ReadMany, Operation.Dump -> Accent.teal
+        is Operation.Erase, is Operation.SetPassword, is Operation.RemovePassword, is Operation.Counter, is Operation.Raw -> Accent.amber
+        Operation.MakeReadOnly -> Accent.brick
     }
 
 @Composable
