@@ -3,6 +3,13 @@
 
     <uses-permission android:name="android.permission.NFC" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- "Pick nearby network" for Wi-Fi tags. Android still requires location for Wi-Fi scan results, even on 13+:
+         https://developer.android.com/develop/connectivity/wifi/wifi-permissions
+         Latch never reads or stores your location. It's only used to list network names. -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-feature android:name="android.hardware.nfc" android:required="true" />
 
     <!-- Lets the "Launch an app" writer list installed apps (Android 11+ package visibility). -->

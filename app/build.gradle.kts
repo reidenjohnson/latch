@@ -45,6 +45,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.material.icons.extended)
+    implementation(libs.zxing.core) // decodes Wi-Fi QR codes from screenshots/photos, fully offline
     debugImplementation(libs.androidx.ui.tooling)
 
     testImplementation(libs.junit)

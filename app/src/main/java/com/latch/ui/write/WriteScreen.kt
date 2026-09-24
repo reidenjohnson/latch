@@ -97,6 +97,8 @@ import com.latch.nfc.RecordSpec
 import com.latch.nfc.RecordType
 import com.latch.nfc.Records
 import com.latch.nfc.TagSizes
+import com.latch.nfc.WifiQr
+import androidx.activity.result.PickVisualMediaRequest
 import com.latch.ui.components.IconBadge
 import com.latch.ui.components.ScreenHeader
 import com.latch.ui.components.icon
@@ -370,6 +372,7 @@ private fun RecordEditor(
                 }
                 if (count > 1) IconButton(onClick = onRemove) { Icon(Icons.Rounded.Close, contentDescription = "Remove record") }
             }
+            if (spec.type == RecordType.WiFi) WifiHelpers(spec, onChange)
             Records.visibleFields(spec).forEach { f ->
                 val err = errors[f.key]?.takeIf { it.isNotEmpty() }
                 when {
@@ -397,6 +400,55 @@ private fun RecordEditor(
     if (pickingApp) AppPicker(onDismiss = { pickingApp = false }) { pkg, label ->
         onChange(spec.copy(values = spec.values + ("package" to pkg) + ("label" to label)))
         pickingApp = false
+    }
+}
+
+/** "Nearby networks" and "Import QR code". Android never lets apps read saved Wi-Fi passwords, so these are the shortcuts. */
+@Composable
+private fun WifiHelpers(spec: RecordSpec, onChange: (RecordSpec) -> Unit) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var picking by remember { mutableStateOf(false) }
+    var note by remember { mutableStateOf<String?>(null) }
+    var decoding by remember { mutableStateOf(false) }
+
+    fun apply(ssid: String, password: String?, auth: String) {
+        val (security, warning) = WifiQr.classify(auth)
+        var values = spec.values + ("ssid" to ssid)
+        if (security != null) values = values + ("security" to security.name)
+        if (password != null) values = values + ("password" to password)
+        onChange(spec.copy(values = values))
+        note = warning
+    }
+
+    val pickImage = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        uri ?: return@rememberLauncherForActivityResult
+        decoding = true
+        scope.launch {
+            val text = withContext(Dispatchers.Default) { decodeQr(context, uri) }
+            decoding = false
+            val net = text?.let(WifiQr::parse)
+            if (net == null) note = if (text == null) "Couldn't find a QR code in that image." else "That QR code isn't a Wi-Fi code."
+            else apply(net.ssid, net.password, net.type)
+        }
+    }
+
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedButton(onClick = { picking = true }, modifier = Modifier.weight(1f)) { Text("Nearby networks") }
+        OutlinedButton(
+            onClick = { pickImage.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+            modifier = Modifier.weight(1f),
+        ) { if (decoding) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp) else Text("Import QR code") }
+    }
+    Text(
+        "Import QR code: on this phone, open Settings › Wi-Fi › ⚙ next to your network › QR code, take a screenshot, " +
+            "then pick it here. A photo of a router's Wi-Fi QR sticker works too. That fills in the password.",
+        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    note?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
+    if (picking) NetworkPicker(onDismiss = { picking = false }) { n ->
+        picking = false
+        apply(n.ssid, null, n.caps)
     }
 }
 
