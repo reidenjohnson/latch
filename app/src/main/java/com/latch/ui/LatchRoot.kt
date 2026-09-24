@@ -95,6 +95,7 @@ fun LatchRoot(app: LatchApplication) {
                         colors = NavigationBarItemDefaults.colors(
                             indicatorColor = MaterialTheme.colorScheme.primaryContainer,
                             selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            selectedTextColor = MaterialTheme.colorScheme.primary, // Kairos: Fern = active nav
                         ),
                     )
                 }

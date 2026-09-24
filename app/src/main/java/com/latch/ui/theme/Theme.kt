@@ -13,70 +13,95 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// Brand: brass (the hardware of a latch) on ink / warm paper. Tertiary = success green.
-private val Dark = darkColorScheme(
-    primary = Color(0xFFE9B949),
-    onPrimary = Color(0xFF1A1405),
-    primaryContainer = Color(0xFF3A2E12),
-    onPrimaryContainer = Color(0xFFF6D98E),
-    secondary = Color(0xFFC9B68A),
-    onSecondary = Color(0xFF1A1405),
-    secondaryContainer = Color(0xFF3A2E12),
-    onSecondaryContainer = Color(0xFFF6D98E),
-    tertiary = Color(0xFF5FD39A),
-    onTertiary = Color(0xFF00301A),
-    tertiaryContainer = Color(0xFF123524),
-    onTertiaryContainer = Color(0xFFA6F0C8),
-    background = Color(0xFF0E0F12),
-    onBackground = Color(0xFFECEDEF),
-    surface = Color(0xFF0E0F12),
-    onSurface = Color(0xFFECEDEF),
-    surfaceVariant = Color(0xFF1E2128),
-    onSurfaceVariant = Color(0xFF9AA0AA),
-    surfaceContainerLowest = Color(0xFF0A0B0D),
-    surfaceContainerLow = Color(0xFF14161A),
-    surfaceContainer = Color(0xFF181A1F),
-    surfaceContainerHigh = Color(0xFF1E2128),
-    surfaceContainerHighest = Color(0xFF262A32),
-    outline = Color(0xFF3A3F48),
-    outlineVariant = Color(0xFF2A2E36),
-    error = Color(0xFFFF7A70),
-    onError = Color(0xFF3B0906),
-    errorContainer = Color(0xFF3D1512),
-    onErrorContainer = Color(0xFFFFD2CC),
-)
+/**
+ * Latch uses the Kairos palette (Reiden's brand, from kairos-app ui/Theme.kt). Only four accent hues exist:
+ * Fern (primary / success), Teal (secondary / links), Amber (highlight) and Brick (errors), on a warm-neutral
+ * Smoke ↔ Carbon ramp. Every other color is a lightness step of one of those, on the same hue.
+ * Values marked "Kairos" are copied exactly. "step" = a same-hue lightness step for roles Kairos doesn't define.
+ */
+private object Brand {
+    val Smoke = Color(0xFFF5F5F4)      // Kairos
+    val Carbon = Color(0xFF202321)     // Kairos
+    val Fern = Color(0xFF566E3F)       // Kairos primary
+    val FernLift = Color(0xFF8CB06B)   // Kairos (Fern lifted for dark)
+    val Teal = Color(0xFF167C93)       // Kairos water (Teal +2)
+    val TealLift = Color(0xFF57A6BA)   // Kairos (dark)
+    val Amber = Color(0xFFDE8521)      // Kairos
+    val AmberLift = Color(0xFFE89A45)  // Kairos (dark)
+    val Brick = Color(0xFFB23A2E)      // Kairos
+    val BrickLift = Color(0xFFE1614E)  // Kairos (dark)
+}
 
 private val Light = lightColorScheme(
-    primary = Color(0xFF9A6B00),
+    primary = Brand.Fern,
     onPrimary = Color(0xFFFFFFFF),
-    primaryContainer = Color(0xFFF8E2A8),
-    onPrimaryContainer = Color(0xFF3A2800),
-    secondary = Color(0xFF6E5E3A),
+    primaryContainer = Color(0xFFE2EAD8),      // step: pale Fern
+    onPrimaryContainer = Color(0xFF2B3A1E),    // step: deep Fern
+    secondary = Brand.Teal,
     onSecondary = Color(0xFFFFFFFF),
-    secondaryContainer = Color(0xFFF8E2A8),
-    onSecondaryContainer = Color(0xFF3A2800),
-    tertiary = Color(0xFF1E8E57),
+    secondaryContainer = Color(0xFFE2EAD8),    // selected chips share the Fern container (Kairos: Fern = active)
+    onSecondaryContainer = Color(0xFF2B3A1E),
+    tertiary = Brand.Fern,                     // Kairos: Fern = Good / "up" (success)
     onTertiary = Color(0xFFFFFFFF),
-    tertiaryContainer = Color(0xFFCFF3DE),
-    onTertiaryContainer = Color(0xFF00391F),
-    background = Color(0xFFF7F5F0),
-    onBackground = Color(0xFF15171B),
-    surface = Color(0xFFF7F5F0),
-    onSurface = Color(0xFF15171B),
-    surfaceVariant = Color(0xFFEAE6DC),
-    onSurfaceVariant = Color(0xFF5D636E),
+    tertiaryContainer = Color(0xFFE2EAD8),
+    onTertiaryContainer = Color(0xFF2B3A1E),
+    background = Brand.Smoke,
+    onBackground = Color(0xFF1E201D),          // Kairos text
+    surface = Color(0xFFFFFFFF),               // Kairos surface
+    onSurface = Color(0xFF1E201D),
+    surfaceVariant = Color(0xFFEEEEEC),        // Kairos surface2
+    onSurfaceVariant = Color(0xFF5E605B),      // Kairos dim
+    surfaceTint = Color(0xFFFFFFFF),           // Kairos: keep Material's tint neutral
     surfaceContainerLowest = Color(0xFFFFFFFF),
-    surfaceContainerLow = Color(0xFFFCFAF6),
-    surfaceContainer = Color(0xFFFFFFFF),
-    surfaceContainerHigh = Color(0xFFF1EEE7),
-    surfaceContainerHighest = Color(0xFFE9E5DC),
-    outline = Color(0xFFCFC9BC),
-    outlineVariant = Color(0xFFE3DED3),
-    error = Color(0xFFC62828),
+    surfaceContainerLow = Color(0xFFF7F7F6),   // Kairos
+    surfaceContainer = Color(0xFFFFFFFF),      // Kairos
+    surfaceContainerHigh = Color(0xFFEEEEEC),  // Kairos
+    surfaceContainerHighest = Color(0xFFE3E3E0), // Kairos
+    outline = Color(0xFF95968F),               // Kairos faint
+    outlineVariant = Color(0x12202321),        // Kairos line
+    error = Brand.Brick,
     onError = Color(0xFFFFFFFF),
-    errorContainer = Color(0xFFFDE0DC),
-    onErrorContainer = Color(0xFF5C0B07),
+    errorContainer = Color(0xFFF6DEDA),        // step: pale Brick
+    onErrorContainer = Color(0xFF5C1A12),      // step: deep Brick
 )
+
+private val Dark = darkColorScheme(
+    primary = Brand.FernLift,
+    onPrimary = Color(0xFF0E100E),             // Kairos
+    primaryContainer = Color(0xFF3A5029),      // Kairos segBottom (Fern, darker step)
+    onPrimaryContainer = Color(0xFFD7E6C4),    // step: pale Fern
+    secondary = Brand.TealLift,
+    onSecondary = Color(0xFF0E100E),
+    secondaryContainer = Color(0xFF3A5029),
+    onSecondaryContainer = Color(0xFFD7E6C4),
+    tertiary = Brand.FernLift,
+    onTertiary = Color(0xFF0E100E),
+    tertiaryContainer = Color(0xFF3A5029),
+    onTertiaryContainer = Color(0xFFD7E6C4),
+    background = Color(0xFF19181A),            // Kairos bg
+    onBackground = Color(0xFFECEBEC),          // Kairos text
+    surface = Color(0xFF232224),               // Kairos surface
+    onSurface = Color(0xFFECEBEC),
+    surfaceVariant = Color(0xFF2C2B2E),        // Kairos surface2
+    onSurfaceVariant = Color(0xFFA8A7A9),      // Kairos dim
+    surfaceTint = Color(0xFF232224),
+    surfaceContainerLowest = Color(0xFF131214), // Kairos
+    surfaceContainerLow = Color(0xFF232224),   // Kairos
+    surfaceContainer = Color(0xFF232224),      // cards = Kairos surface
+    surfaceContainerHigh = Color(0xFF2C2B2E),  // Kairos
+    surfaceContainerHighest = Color(0xFF322F33), // Kairos
+    outline = Color(0xFF767579),               // Kairos faint
+    outlineVariant = Color(0x1AF1F0F2),        // Kairos line
+    error = Brand.BrickLift,
+    onError = Color(0xFF2A0A06),               // Kairos
+    errorContainer = Color(0xFF3B1814),        // step: deep Brick
+    onErrorContainer = Color(0xFFF5C9C1),      // step: pale Brick
+)
+
+/** Amber is Kairos's minority highlight. Exposed for accents like warnings. */
+object LatchAccent {
+    @Composable fun amber() = if (isSystemInDarkTheme()) Brand.AmberLift else Brand.Amber
+}
 
 private val Base = Typography()
 private val LatchType = Base.copy(

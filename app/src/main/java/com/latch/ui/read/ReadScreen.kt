@@ -139,7 +139,7 @@ fun ReadScreen(nfc: NfcController, onWrite: () -> Unit, onEdit: (List<RecordSpec
         }
         item { ReadyPill() }
         problem?.let { p -> item { ProblemCard(p) } }
-        item { TagInfoCard(s) }
+        item { TagBanner(s) }
         when {
             !s.supported -> item {
                 NoticeCard(
@@ -193,50 +193,46 @@ private fun ReadyPill() {
     }
 }
 
+/** One slim banner: chip name, memory used, and small attribute chips. The tag's content gets the big cards. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun TagInfoCard(s: TagSnapshot) {
-    Card(colors = surfaceCardColors()) {
-        Column(Modifier.fillMaxWidth().padding(18.dp)) {
-            Text(s.chip ?: s.typeLabel, style = MaterialTheme.typography.titleLarge)
-            if (s.chip != null) {
-                Text(s.typeLabel, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+private fun TagBanner(s: TagSnapshot) {
+    Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Rounded.Nfc, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.size(8.dp))
+                Text(s.chip ?: s.typeLabel, style = MaterialTheme.typography.titleSmall)
+                s.capacity?.let { cap ->
+                    Spacer(Modifier.weight(1f))
+                    Text("${s.used} / $cap bytes", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
-            Spacer(Modifier.height(10.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 when (s.writable) {
                     true -> StatusChip("Writable", MaterialTheme.colorScheme.tertiary)
-                    false -> StatusChip("Locked (read-only)", MaterialTheme.colorScheme.error)
-                    null -> if (s.supported) StatusChip("Not formatted yet", MaterialTheme.colorScheme.primary)
+                    false -> StatusChip("Locked", MaterialTheme.colorScheme.error)
+                    null -> if (s.supported) StatusChip("Not formatted", MaterialTheme.colorScheme.primary)
                 }
                 val n = s.ntag
                 when (n?.genuine) {
-                    true -> StatusChip("Genuine NXP chip", MaterialTheme.colorScheme.tertiary)
-                    false -> StatusChip("Signature didn't verify", MaterialTheme.colorScheme.error)
+                    true -> StatusChip("Genuine NXP", MaterialTheme.colorScheme.tertiary)
+                    false -> StatusChip("Signature failed", MaterialTheme.colorScheme.error)
                     null -> Unit
                 }
                 n?.config?.let { c ->
-                    if (c.passwordProtected) StatusChip(if (c.readProtected) "Password: read + write" else "Password: write", MaterialTheme.colorScheme.primary)
-                    if (c.mirrorEnabled) StatusChip("Live link on", MaterialTheme.colorScheme.primary)
+                    if (c.passwordProtected) StatusChip(if (c.readProtected) "Password: read+write" else "Password", MaterialTheme.colorScheme.primary)
+                    if (c.mirrorEnabled) StatusChip("Live link", MaterialTheme.colorScheme.primary)
                 }
-                n?.counter?.let { StatusChip("Scanned $it ×", MaterialTheme.colorScheme.primary) }
+                n?.counter?.let { StatusChip("$it scans", MaterialTheme.colorScheme.primary) }
+                if (s.chip != null) StatusChip(s.typeLabel, MaterialTheme.colorScheme.onSurfaceVariant)
             }
             s.capacity?.let { cap ->
-                Spacer(Modifier.height(14.dp))
                 LinearProgressIndicator(
                     progress = { (s.used.toFloat() / cap).coerceIn(0f, 1f) },
-                    modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
+                    modifier = Modifier.fillMaxWidth().height(3.dp).clip(CircleShape),
                     trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                     drawStopIndicator = {},
-                )
-                Spacer(Modifier.height(6.dp))
-                Text("${s.used} of $cap bytes used", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Spacer(Modifier.height(10.dp))
-            SelectionContainer {
-                Text(
-                    "ID  ${s.uid}", style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -245,8 +241,8 @@ private fun TagInfoCard(s: TagSnapshot) {
 
 @Composable
 private fun StatusChip(text: String, color: Color) {
-    Surface(shape = CircleShape, color = color.copy(alpha = 0.15f), contentColor = color) {
-        Text(text, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp))
+    Surface(shape = CircleShape, color = color.copy(alpha = 0.14f), contentColor = color) {
+        Text(text, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
     }
 }
 
