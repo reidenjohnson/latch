@@ -1,0 +1,116 @@
+package com.latch.ui
+
+import android.content.Intent
+import android.provider.Settings
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.EditNote
+import androidx.compose.material.icons.rounded.Handyman
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Nfc
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import com.latch.data.HistoryStore
+import com.latch.nfc.NfcAvailability
+import com.latch.nfc.NfcController
+import com.latch.nfc.SheetState
+import com.latch.ui.components.ScanSheet
+import com.latch.ui.history.HistoryScreen
+import com.latch.ui.read.ReadScreen
+import com.latch.ui.tools.ToolsScreen
+import com.latch.ui.write.WriteScreen
+
+enum class Tab(val label: String, val icon: ImageVector) {
+    Read("Read", Icons.Rounded.Nfc),
+    Write("Write", Icons.Rounded.EditNote),
+    Tools("Tools", Icons.Rounded.Handyman),
+    History("History", Icons.Rounded.History),
+}
+
+@Composable
+fun LatchRoot(nfc: NfcController, history: HistoryStore) {
+    var tab by rememberSaveable { mutableStateOf(Tab.Read) }
+    val sheet by nfc.sheet.collectAsState()
+    val availability by nfc.availability.collectAsState()
+
+    // Passive reads only happen on the Read tab, so a tag bumped while typing a form does nothing.
+    SideEffect { nfc.passiveReadEnabled = tab == Tab.Read }
+
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        bottomBar = {
+            NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainerLow) {
+                Tab.entries.forEach { t ->
+                    NavigationBarItem(
+                        selected = tab == t,
+                        onClick = { tab = t },
+                        icon = { Icon(t.icon, contentDescription = null) },
+                        label = { Text(t.label) },
+                        colors = NavigationBarItemDefaults.colors(
+                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        ),
+                    )
+                }
+            }
+        },
+    ) { padding ->
+        Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
+            if (availability != NfcAvailability.On) NfcBanner(availability)
+            Box(Modifier.weight(1f)) {
+                when (tab) {
+                    Tab.Read -> ReadScreen(nfc, onWrite = { tab = Tab.Write })
+                    Tab.Write -> WriteScreen(nfc)
+                    Tab.Tools -> ToolsScreen(nfc)
+                    Tab.History -> HistoryScreen(history, nfc)
+                }
+            }
+        }
+    }
+
+    if (sheet !is SheetState.Hidden) ScanSheet(sheet, onDismiss = nfc::dismiss)
+}
+
+@Composable
+private fun NfcBanner(availability: NfcAvailability) {
+    val context = LocalContext.current
+    Surface(color = MaterialTheme.colorScheme.errorContainer, contentColor = MaterialTheme.colorScheme.onErrorContainer) {
+        Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                if (availability == NfcAvailability.Off) "NFC is turned off" else "This phone doesn't have NFC",
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.weight(1f),
+            )
+            if (availability == NfcAvailability.Off) {
+                TextButton(onClick = {
+                    context.startActivity(Intent(Settings.ACTION_NFC_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                }) { Text("Turn on") }
+            }
+        }
+    }
+}

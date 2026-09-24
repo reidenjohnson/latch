@@ -1,0 +1,8 @@
+<resources>
+    <!-- Window theme only (background before Compose draws). The real UI theme is ui/theme/Theme.kt. -->
+    <style name="Theme.Latch" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/window</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+</resources>

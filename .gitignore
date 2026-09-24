@@ -1,0 +1,22 @@
+*.iml
+.gradle/
+.kotlin/
+local.properties
+.idea/
+.DS_Store
+Thumbs.db
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Private working files: Claude instructions, handoffs, notes. Local only, the repo is public.
+CLAUDE.md
+.claude/
+notes/
+
+# Release signing: private, never commit
+keystore/
+keystore.properties
+*.jks
+*.keystore

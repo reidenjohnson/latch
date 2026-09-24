@@ -1,0 +1,12 @@
+# LF in the repo and working tree so checkouts match across platforms.
+* text=auto eol=lf
+
+# Windows batch scripts keep CRLF.
+*.bat text eol=crlf
+
+# Binary assets, never converted.
+*.png binary
+*.webp binary
+*.jpg binary
+*.jar binary
+*.keystore binary

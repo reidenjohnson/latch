@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Padlock mark. The keyhole is cut out with evenOdd so the themed (monochrome) icon keeps it. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M43,50 V45 A11,11 0 0 1 65,45 V50"
+        android:strokeColor="#FFE9B949"
+        android:strokeLineCap="round"
+        android:strokeWidth="5" />
+    <path
+        android:fillColor="#FFE9B949"
+        android:fillType="evenOdd"
+        android:pathData="M42,50 H66 A6,6 0 0 1 72,56 V70 A6,6 0 0 1 66,76 H42 A6,6 0 0 1 36,70 V56 A6,6 0 0 1 42,50 Z M52.6,69 L52.6,62.2 A3.5,3.5 0 1,1 55.4,62.2 L55.4,69 Z" />
+</vector>
