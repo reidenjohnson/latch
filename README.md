@@ -11,23 +11,38 @@ it to four tabs, speaks plain English, and checks every write so you know the ta
 numbers, map locations and app links. It also shows the exact chip (NTAG213/215/216), how much memory is
 used and whether the tag is locked. Open, copy or share anything you find.
 
-**Write.** Pick what the tag should do, fill in a field or two, and tap:
+**Write.** Pick what the tag should do, fill in a field or two, and tap. You can stack several records on one tag.
 
 | | |
 |---|---|
-| Link | Opens a website |
+| Link / Social & pay | Website, or a profile on Instagram, TikTok, X, YouTube, LinkedIn, Venmo, PayPal and more |
 | Text | Stores a note |
 | Wi-Fi | Offers to join your network (standard WSC format) |
 | Contact | Shares a vCard |
 | Call / Message / Email | Opens a pre-filled dialer, text or email draft |
-| Place | Opens a map pin or search |
+| Place | Opens a map pin, or Google Maps directions |
 | App | Launches any installed app |
+| Bluetooth | Offers to pair a speaker or headset |
+| Emergency info | Medical details plus an emergency contact |
+| Locked note | Text encrypted with AES-256-GCM (PBKDF2, 600k rounds) that only opens with your password |
+| Live link | A URL that the chip itself fills with its live scan count and/or ID on every tap |
+| Custom | Any MIME or NFC Forum external record, as text or hex |
 
-A live size meter tells you which tag sizes the data fits on before you write.
+**Blueprints.** Ready-made ideas like guest Wi-Fi, lost & found, pet tag, medical ID, tip jar, navigate home
+and tap-counter flyers. Tap one and fill in the blanks. If nothing personal is needed, it goes straight to the scan.
 
-**Tools.** Copy one tag to another, erase a tag, or permanently lock one (with a confirmation step).
+**Saved designs & editing.** Save any design to reuse it, or read a tag and tap *Edit & rewrite* to change it.
 
-**History.** Everything you read or write is saved, so you can write the same thing to another tag later.
+**Write many.** Write the same thing to a stack of tags, number them with `{n}`, or fill them row by row from a
+CSV spreadsheet using `{Column}` placeholders. You can also lock each one as you go.
+
+**Tools.** Copy, erase, lock forever, password-protect or unprotect (NTAG21x `PWD_AUTH`), turn the chip's scan
+counter on or off, dump the full memory in hex, send raw commands (NfcA/B/F/V, ISO-DEP), and scan many tags into a CSV.
+
+**Read extras.** Checks whether the chip is genuine using NXP's originality signature (ECDSA secp128r1).
+Shows password status, the live scan count, ATQA/SAK and each record's raw bytes.
+
+**History.** Everything you read or write is saved and can be exported as CSV or written again.
 
 ## Reliability
 
