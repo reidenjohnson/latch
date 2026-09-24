@@ -80,7 +80,10 @@ sealed interface SheetState {
     /** Waiting for a tag. [problem] is set when the last attempt failed and the next tap retries.
      *  [note] is a success message shown mid-flow ("Tag 3 written"). */
     data class Waiting(val op: Operation, val problem: Problem? = null, val note: String? = null) : SheetState
-    data class Done(val op: Operation, val title: String, val detail: String?, val report: Report? = null) : SheetState
+    data class Done(
+        val op: Operation, val title: String, val detail: String?, val report: Report? = null,
+        val at: Long = System.currentTimeMillis(),
+    ) : SheetState
 }
 
 enum class RecordKind { Link, Text, WiFi, Contact, Phone, Sms, Email, Location, App, Bluetooth, Secret, Data, Empty, Unknown }

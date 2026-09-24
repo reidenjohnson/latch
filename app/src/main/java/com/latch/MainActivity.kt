@@ -61,6 +61,7 @@ class MainActivity : ComponentActivity() {
         if (!a.isEnabled) return
         val flags = NfcAdapter.FLAG_READER_NFC_A or NfcAdapter.FLAG_READER_NFC_B or
             NfcAdapter.FLAG_READER_NFC_F or NfcAdapter.FLAG_READER_NFC_V
+        android.util.Log.d("Latch", "reader mode on")
         a.enableReaderMode(this, { tag -> latch.nfc.onTag(tag) }, flags, null)
     }
 

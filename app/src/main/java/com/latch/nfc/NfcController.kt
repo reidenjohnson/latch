@@ -2,6 +2,7 @@ package com.latch.nfc
 
 import android.content.Context
 import android.nfc.Tag
+import android.util.Log
 import com.latch.data.HistoryAction
 import com.latch.data.HistoryStore
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,6 +18,10 @@ import kotlinx.coroutines.flow.asStateFlow
 class NfcController(private val context: Context, private val history: HistoryStore) {
 
     private val haptics = Haptics(context)
+    private companion object {
+        const val TAG = "Latch"
+        const val DONE_GRACE_MS = 1200L
+    }
 
     private val _availability = MutableStateFlow(NfcAvailability.On)
     val availability: StateFlow<NfcAvailability> = _availability.asStateFlow()
@@ -34,7 +39,7 @@ class NfcController(private val context: Context, private val history: HistorySt
 
     fun setAvailability(value: NfcAvailability) { _availability.value = value }
     fun arm(op: Operation) { _sheet.value = SheetState.Waiting(op) }
-    fun dismiss() { _sheet.value = SheetState.Hidden }
+    fun dismiss() { Log.d(TAG, "sheet dismissed"); _sheet.value = SheetState.Hidden }
     fun clearRead() { _lastRead.value = null; _readProblem.value = null }
 
     /** Supplies a password after the sheet asked for one. The next tap retries with it. */
@@ -55,9 +60,17 @@ class NfcController(private val context: Context, private val history: HistorySt
 
     /** Called on the reader-mode binder thread. Blocking I/O is fine here. */
     fun onTag(tag: Tag) {
+        Log.d(TAG, "onTag uid=${TagIo.uid(tag)} sheet=${_sheet.value::class.simpleName} passive=$passiveReadEnabled techs=${tag.techList.size}")
         when (val state = _sheet.value) {
             is SheetState.Waiting -> perform(state, tag)
-            is SheetState.Done -> Unit
+            is SheetState.Done -> {
+                // Ignore the same tag bouncing right after a success. After that, a tap means "next", so never get
+                // stuck on a finished result if the sheet's close animation didn't report back.
+                if (System.currentTimeMillis() - state.at > DONE_GRACE_MS && state.report == null) {
+                    _sheet.compareAndSet(state, SheetState.Hidden)
+                    if (passiveReadEnabled) read(tag)
+                }
+            }
             SheetState.Hidden -> if (passiveReadEnabled) read(tag)
         }
     }
@@ -68,8 +81,10 @@ class NfcController(private val context: Context, private val history: HistorySt
             _lastRead.value = snapshot
             _readProblem.value = null
             history.add(HistoryAction.Read, snapshot.summary, snapshot.chip ?: snapshot.typeLabel, snapshot.message)
+            Log.d(TAG, "read ok: ${snapshot.summary} records=${snapshot.records.size}")
             haptics.success()
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
+            Log.w(TAG, "read failed", e)
             _readProblem.value = TagIo.explain(e)
             haptics.error()
         }

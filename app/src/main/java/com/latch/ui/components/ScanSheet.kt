@@ -65,7 +65,8 @@ fun ScanSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
-    val close: () -> Unit = { scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() } }
+    // Always report the close, even if the hide animation is interrupted. A stale "done" state blocked reads once.
+    val close: () -> Unit = { scope.launch { try { sheetState.hide() } finally { onDismiss() } } }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
