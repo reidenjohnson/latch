@@ -30,6 +30,7 @@ class Blocker : AccessibilityService() {
 
     override fun onServiceConnected() {
         _running.value = true
+        Grants.granted(this, Grants.Kind.Blocking)
         // A session just started while a blocked app was open (say, the tag was tapped over it): cover it now.
         scope.launch {
             latch.state.distinctUntilChangedBy { it.active?.start }.collect { s -> if (s.active != null) front?.let(::check) }

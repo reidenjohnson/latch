@@ -72,7 +72,6 @@ fun SettingsScreen(
     val locked = state.active != null
     val blockerOn by Blocker.running.collectAsState()
     val silenceOn by rememberOnResume { Silencer.allowed(context) }
-    val exactOn by rememberOnResume { Alarms.exactAllowed(context) }
     val notifOn = rememberOnResume {
         Build.VERSION.SDK_INT < 33 || context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED
     }
@@ -128,21 +127,17 @@ fun SettingsScreen(
             }
         }
         item {
-            Section("Permissions", "Only app blocking is required. The rest make Latch nicer.") {
-                ListRow("App blocking", icon = Icons.Rounded.Shield, tint = p.fern, value = if (blockerOn) "On" else "Off", chevron = !blockerOn) {
-                    if (!blockerOn) onTurnOnBlocking() else context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            Section("Permissions", "Only locking apps is required. Turning a permission off again is done in Android Settings.") {
+                PermissionRow(Icons.Rounded.Shield, p.fern, "Lock apps", "Required. Sees which app opened, never what's on screen.", blockerOn) {
+                    com.latch.focus.block.Grants.openBlocking(context)
                 }
                 RowDivider()
-                ListRow("Hide notifications", icon = Icons.Rounded.NotificationsOff, tint = p.teal, subtitle = "Lets modes hold back notifications from blocked apps.", value = if (silenceOn) "On" else "Off", chevron = true) {
-                    context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                PermissionRow(Icons.Rounded.NotificationsOff, p.teal, "Hide notifications", "For modes that hold back notifications from locked apps.", silenceOn) {
+                    com.latch.focus.block.Grants.openNotifications(context)
                 }
                 RowDivider()
-                ListRow("On-time schedules", icon = Icons.Rounded.Alarm, tint = p.amber, subtitle = "Without it, schedules and timers can start or end a few minutes late.", value = if (exactOn) "On" else "Off", chevron = true) {
-                    context.startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:${context.packageName}")))
-                }
-                RowDivider()
-                ListRow("Latched notification", icon = Icons.Rounded.Notifications, tint = p.amber, subtitle = "A quiet timer while you're latched.", value = if (notifOn.value) "On" else "Off", chevron = !notifOn.value) {
-                    if (!notifOn.value && Build.VERSION.SDK_INT >= 33) askNotif.launch(Manifest.permission.POST_NOTIFICATIONS)
+                PermissionRow(Icons.Rounded.Notifications, p.amber, "Latched notification", "A quiet timer while you're latched.", notifOn.value) {
+                    if (Build.VERSION.SDK_INT >= 33) askNotif.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
             }
         }

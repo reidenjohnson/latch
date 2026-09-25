@@ -49,6 +49,7 @@ import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toBitmap
 import com.latch.focus.data.Hue
 import com.latch.focus.data.Stats
@@ -113,44 +114,38 @@ class BlockedActivity : ComponentActivity() {
                 Modifier.fillMaxSize().safeDrawingPadding().padding(horizontal = 28.dp, vertical = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                // Who's covering the app, so it never feels like you were thrown back into Latch.
+                Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(LatchGlyph, null, tint = white.copy(alpha = 0.5f), modifier = Modifier.size(14.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("LATCH", style = Type.caption, color = white.copy(alpha = 0.5f))
+                }
                 Spacer(Modifier.weight(1f))
 
-                // The hero: how long you've been latched (or how long is left), inside a thin breathing ring.
+                // The hero is the app you tried to open: its icon, grayed out, in a thin breathing ring.
                 Box(contentAlignment = Alignment.Center) {
                     BreathingRing(hue)
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        if (active != null) {
-                            val left = active.endsAt?.let { it - now }
-                            val time = Stats.clock(left ?: (now - active.start))
-                            // "1:12:04" is two digits wider than "12:04"; shrink it so it stays inside the ring.
-                            Text(time, style = if (time.length > 5) Type.hero.copy(fontSize = Type.hero.fontSize * 0.72f) else Type.hero, color = white)
-                            Text(if (left != null) "left" else "latched", style = Type.callout, color = white.copy(alpha = 0.5f))
-                        }
-                    }
-                }
-
-                Spacer(Modifier.height(40.dp))
-                // The app, small and gray: it's off right now.
-                Row(verticalAlignment = Alignment.CenterVertically) {
                     app?.second?.let {
                         Image(
                             it, null,
                             colorFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) }),
-                            modifier = Modifier.size(22.dp).clip(RoundedCornerShape(6.dp)).alpha(0.7f),
+                            modifier = Modifier.size(96.dp).clip(RoundedCornerShape(24.dp)).alpha(0.85f),
                         )
-                        Spacer(Modifier.width(8.dp))
                     }
-                    Text(
-                        "${app?.first ?: "This app"} is latched",
-                        style = Type.headline, color = white.copy(alpha = 0.7f),
-                    )
                 }
+                Spacer(Modifier.height(28.dp))
+                Text(app?.first ?: "This app", style = Type.largeTitle.copy(fontSize = 40.sp, lineHeight = 44.sp), color = white)
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    if (active != null) "is latched by ${active.modeName}" else "is latched",
+                    style = Type.body, color = white.copy(alpha = 0.55f),
+                )
 
                 Spacer(Modifier.weight(1.2f))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(LatchGlyph, null, tint = hue, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Tap your Latch to unlatch", style = Type.callout, color = white.copy(alpha = 0.85f))
+                    Text("Tap your Latch to open ${app?.first ?: "it"}", style = Type.callout, color = white.copy(alpha = 0.85f))
                 }
                 Spacer(Modifier.height(20.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -171,7 +166,7 @@ class BlockedActivity : ComponentActivity() {
     private fun BreathingRing(color: Color) {
         val t = rememberInfiniteTransition(label = "breathe")
         val a by t.animateFloat(0.25f, 0.6f, infiniteRepeatable(tween(3200, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "a")
-        Canvas(Modifier.size(300.dp)) {
+        Canvas(Modifier.size(190.dp)) {
             drawCircle(color.copy(alpha = a), radius = size.minDimension / 2 - 2.dp.toPx(), style = Stroke(1.5.dp.toPx()))
         }
     }

@@ -43,6 +43,9 @@ import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.PriorityHigh
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Shield
+import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.foundation.clickable
+import com.latch.focus.block.Grants
 import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material.icons.rounded.HealthAndSafety
 import androidx.compose.material3.Icon
@@ -267,42 +270,54 @@ fun PairVisual(pair: PairState) {
 private fun BlockingStep(onNext: () -> Unit) {
     val p = palette
     val context = LocalContext.current
-    val on by Blocker.running.collectAsState()
+    val blocking by Blocker.running.collectAsState()
+    val notif = rememberOnResume {
+        Build.VERSION.SDK_INT < 33 || context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED
+    }
+    val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { notif.value = it }
     Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
-        StepHeader(3, "Let Latch lock apps", "Android asks you to turn this on yourself, in Accessibility settings.")
-        Section {
-            ListRow("Sees which app just opened", icon = Icons.Rounded.Shield, tint = p.teal, subtitle = "So it can cover the ones you chose.")
-            RowDivider()
-            ListRow("Never reads your screen", icon = Icons.Rounded.VisibilityOff, tint = p.fern, subtitle = "Or what you type. Nothing leaves your phone.")
+        StepHeader(3, "Two quick permissions", "Latch asks only for what it uses. Nothing leaves your phone.")
+        Section(footer = "Android doesn't let apps switch this on for you. Tap Allow, then choose Latch and turn it on. You'll come straight back here.") {
+            PermissionRow(
+                Icons.Rounded.Shield, p.fern, "Lock apps", "Required. Sees which app just opened, never what's on screen.",
+                granted = blocking,
+            ) { Grants.openBlocking(context) }
         }
         Spacer(Modifier.height(16.dp))
-        Text(
-            "On the next screen, open \"Installed apps\" (it may be named differently on your phone), choose Latch and turn it on. " +
-                "If Android says it's a restricted setting, open Latch's App info, tap ⋮ and choose \"Allow restricted settings\", then try again.",
-            style = Type.footnote, color = p.dim, modifier = Modifier.padding(horizontal = 4.dp),
-        )
-        Spacer(Modifier.weight(1f))
-        if (on) {
-            Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.Check, null, tint = p.fern)
-                Spacer(Modifier.width(6.dp))
-                Text("App blocking is on", style = Type.headline, color = p.fern)
+        Section(footer = "Optional. A quiet timer in your notifications while you're latched.") {
+            PermissionRow(Icons.Rounded.Notifications, p.amber, "Notifications", "Android will ask you yes or no.", granted = notif.value) {
+                if (Build.VERSION.SDK_INT >= 33) ask.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
-            InkButton("Continue", onClick = onNext)
-        } else {
-            InkButton("Open settings") {
-                context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-            }
-            GhostButton("Skip for now", modifier = Modifier.align(Alignment.CenterHorizontally), onClick = onNext)
         }
+        Spacer(Modifier.weight(1f))
+        InkButton(if (blocking) "Continue" else "Allow locking apps") { if (blocking) onNext() else Grants.openBlocking(context) }
+        if (!blocking) GhostButton("Skip for now", modifier = Modifier.align(Alignment.CenterHorizontally), onClick = onNext)
         Spacer(Modifier.height(16.dp))
     }
+}
+
+/** A permission with a one-tap Allow button, which turns into a check once it's granted. */
+@Composable
+fun PermissionRow(icon: ImageVector, color: Color, title: String, body: String, granted: Boolean, onAllow: () -> Unit) {
+    val p = palette
+    ListRow(
+        title, icon = icon, tint = color, subtitle = body,
+        trailing = {
+            if (granted) {
+                Icon(Icons.Rounded.Check, "Allowed", tint = p.fern, modifier = Modifier.padding(start = 8.dp))
+            } else {
+                Box(
+                    Modifier.padding(start = 8.dp).clip(CircleShape).background(p.ink).clickable(onClick = onAllow)
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                ) { Text("Allow", style = Type.callout, color = p.onInk) }
+            }
+        },
+    )
 }
 
 @Composable
 private fun DoneStep(onFinish: () -> Unit) {
     val p = palette
-    val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { onFinish() }
     Column(Modifier.fillMaxSize().padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(Modifier.weight(1f))
         IconTile(Icons.Rounded.Check, p.fern, 72.dp)
@@ -314,10 +329,7 @@ private fun DoneStep(onFinish: () -> Unit) {
             style = Type.callout, color = p.dim, textAlign = TextAlign.Center,
         )
         Spacer(Modifier.weight(1.2f))
-        InkButton("Start using Latch") {
-            // The session timer notification is optional; ask once, and go on either way.
-            if (Build.VERSION.SDK_INT >= 33) ask.launch(Manifest.permission.POST_NOTIFICATIONS) else onFinish()
-        }
+        InkButton("Start using Latch", onClick = onFinish)
         Spacer(Modifier.height(16.dp))
     }
 }

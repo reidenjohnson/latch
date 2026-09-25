@@ -21,6 +21,7 @@ class Silencer : NotificationListenerService() {
     private var scope: CoroutineScope? = null
 
     override fun onListenerConnected() {
+        Grants.granted(this, Grants.Kind.Notifications)
         // A session just started: clear what's already waiting, too.
         scope = CoroutineScope(SupervisorJob() + Dispatchers.Main).also { s ->
             s.launch { latch.state.distinctUntilChangedBy { it.active?.start }.collect { sweep() } }

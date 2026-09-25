@@ -215,13 +215,13 @@ class MainActivity : ComponentActivity() {
                     Text(
                         "Latch uses Android's Accessibility setting only to see which app just opened, so it can cover the ones you chose. " +
                             "It never reads your screen or what you type, and nothing leaves your phone.\n\n" +
-                            "On the next screen, find Latch (maybe under \"Installed apps\") and turn it on.",
+                            "Android asks you to switch this on yourself. Choose Latch on the next screen and turn it on, and you'll come straight back.",
                     )
                 },
                 confirmButton = {
                     TextButton(onClick = {
                         blockingInfo = false
-                        startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                        com.latch.focus.block.Grants.openBlocking(this@MainActivity)
                     }) { Text("Open settings") }
                 },
                 dismissButton = { TextButton(onClick = { blockingInfo = false }) { Text("Not now") } },
@@ -241,7 +241,7 @@ class MainActivity : ComponentActivity() {
                 confirmButton = {
                     TextButton(onClick = {
                         silenceInfo = false
-                        startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                        com.latch.focus.block.Grants.openNotifications(this@MainActivity)
                     }) { Text("Open settings") }
                 },
                 dismissButton = { TextButton(onClick = { silenceInfo = false }) { Text("Not now") } },

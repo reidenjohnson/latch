@@ -9,10 +9,9 @@ import com.latch.focus.latch
 
 /**
  * One alarm at a time, set for the next moment something should happen (a timer ends, a schedule starts or ends).
- * When it fires, the engine ticks. Exact alarms need "Alarms & reminders" access on Android 12+; without it Android
- * may deliver the alarm a few minutes late:
- * https://developer.android.com/develop/background-work/services/alarms/schedule#exact-permission-declare
- * The blocker also ticks every time an app opens, so a late alarm never lets a blocked app through.
+ * When it fires, the engine ticks. Latch doesn't ask for exact-alarm access (one less permission), so Android may
+ * deliver it a few minutes late. That's fine: the blocker also ticks every time an app opens, so a schedule is
+ * enforced the moment you open anything, and a late alarm never lets a blocked app through.
  */
 object Alarms {
     fun schedule(context: Context, at: Long?) {
@@ -41,7 +40,7 @@ class AlarmReceiver : BroadcastReceiver() {
 /** After a restart, re-arm the alarm and catch up (a schedule may have started while the phone was off). */
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == Intent.ACTION_BOOT_COMPLETED || intent.action == AlarmManager.ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED) {
+        if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
             context.latch.tick()
         }
     }

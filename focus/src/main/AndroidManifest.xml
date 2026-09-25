@@ -5,9 +5,6 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <!-- The optional session notification (Android 13+ asks for this). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <!-- Schedules and timers. Optional: without it alarms may arrive a few minutes late.
-         https://developer.android.com/develop/background-work/services/alarms/schedule#exact-permission-declare -->
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <!-- Re-arms schedules after a restart. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-feature android:name="android.hardware.nfc" android:required="true" />
@@ -101,7 +98,6 @@
         <receiver android:name=".engine.BootReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
             </intent-filter>
         </receiver>
     </application>
