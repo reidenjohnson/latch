@@ -26,6 +26,7 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.Nfc
 import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.HealthAndSafety
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -199,7 +200,7 @@ fun EmergencySheet(used: Int, onDismiss: () -> Unit, onUnlock: () -> Unit) {
     val p = palette
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = p.bg) {
         Column(Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, bottom = 32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            IconTile(Icons.Rounded.Schedule, p.brick, 52.dp)
+            IconTile(Icons.Rounded.HealthAndSafety, p.brick, 52.dp)
             Spacer(Modifier.height(16.dp))
             Text("Emergency unlock", style = Type.title, color = p.text)
             Spacer(Modifier.height(6.dp))

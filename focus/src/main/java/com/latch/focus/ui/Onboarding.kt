@@ -44,7 +44,8 @@ import androidx.compose.material.icons.rounded.Nfc
 import androidx.compose.material.icons.rounded.PriorityHigh
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Shield
-import androidx.compose.material.icons.rounded.SupportAgent
+import androidx.compose.material.icons.rounded.VisibilityOff
+import androidx.compose.material.icons.rounded.HealthAndSafety
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -116,7 +117,7 @@ private fun Hero(onStart: () -> Unit) {
         Feature(Icons.Rounded.Nfc, p.teal, "Tap to lock", "Tap your Latch tag and the apps that pull you in are locked.")
         Feature(Icons.Rounded.LockOpen, p.fern, "Tap to unlock", "To get them back, walk over and tap it again.")
         Feature(Icons.Rounded.Schedule, p.amber, "Runs on a schedule", "Lock automatically for work hours or bedtime, if you like.")
-        Feature(Icons.Rounded.SupportAgent, p.brick, "Always a way out", "Calls, Settings and an emergency unlock always work.")
+        Feature(Icons.Rounded.HealthAndSafety, p.brick, "Always a way out", "Calls, Settings and an emergency unlock always work.")
         Spacer(Modifier.weight(1f))
         Spacer(Modifier.height(24.dp))
         InkButton("Get started", onClick = onStart)
@@ -273,7 +274,7 @@ private fun BlockingStep(onNext: () -> Unit) {
         Section {
             ListRow("Sees which app just opened", icon = Icons.Rounded.Shield, tint = p.teal, subtitle = "So it can cover the ones you chose.")
             RowDivider()
-            ListRow("Never reads your screen", icon = Icons.Rounded.LockOpen, tint = p.fern, subtitle = "Or what you type. Nothing leaves your phone.")
+            ListRow("Never reads your screen", icon = Icons.Rounded.VisibilityOff, tint = p.fern, subtitle = "Or what you type. Nothing leaves your phone.")
         }
         Spacer(Modifier.height(16.dp))
         Text(

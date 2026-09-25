@@ -91,20 +91,23 @@ fun loadApps(context: Context): List<AppInfo> {
 }
 
 /**
- * Apps can declare a category (android:appCategory), exposed as ApplicationInfo.category:
+ * Games are found by category (ApplicationInfo.category, set by the app or its installer):
  * https://developer.android.com/reference/android/content/pm/ApplicationInfo#category
- * Many big apps don't set one, so a short list of well-known package names backs it up.
+ * Other categories are too broad to trust. On Reiden's S23 (2026-09-25), CATEGORY_SOCIAL also covered Chrome,
+ * Gmail, Messages and WhatsApp, and CATEGORY_VIDEO covered a video editor. So social and streaming apps come
+ * from a list of well-known package names instead.
  */
 private fun isTimeSink(info: ApplicationInfo): Boolean =
-    info.packageName in KNOWN || info.category in setOf(
-        ApplicationInfo.CATEGORY_SOCIAL, ApplicationInfo.CATEGORY_VIDEO, ApplicationInfo.CATEGORY_GAME, ApplicationInfo.CATEGORY_NEWS,
-    )
+    info.category == ApplicationInfo.CATEGORY_GAME || info.packageName in KNOWN
 
 private val KNOWN = setOf(
+    // Social
     "com.instagram.android", "com.instagram.barcelona", "com.zhiliaoapp.musically", "com.ss.android.ugc.trill",
     "com.facebook.katana", "com.facebook.lite", "com.twitter.android", "com.snapchat.android", "com.reddit.frontpage",
-    "com.pinterest", "com.google.android.youtube", "com.netflix.mediaclient", "tv.twitch.android.app", "com.discord",
-    "com.tumblr", "com.bereal.ft",
+    "com.pinterest", "com.tumblr", "com.bereal.ft", "com.discord",
+    // Video
+    "com.google.android.youtube", "tv.twitch.android.app", "com.netflix.mediaclient", "com.hulu.plus",
+    "com.disney.disneyplus", "com.amazon.avod.thirdpartyclient", "com.wbd.stream",
 )
 
 /**

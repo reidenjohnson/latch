@@ -21,7 +21,7 @@ import androidx.compose.material.icons.rounded.Nfc
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.NotificationsOff
 import androidx.compose.material.icons.rounded.Shield
-import androidx.compose.material.icons.rounded.SupportAgent
+import androidx.compose.material.icons.rounded.HealthAndSafety
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -129,7 +129,7 @@ fun SettingsScreen(
                     "Uninstalling Latch removes every restriction.",
             ) {
                 ListRow(
-                    "Emergency unlock", icon = Icons.Rounded.SupportAgent, tint = p.brick,
+                    "Emergency unlock", icon = Icons.Rounded.HealthAndSafety, tint = p.brick,
                     subtitle = "Hold for $EMERGENCY_SECONDS seconds during a session to end it.",
                     value = "${state.emergencyUnlocks} used",
                 )
