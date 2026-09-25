@@ -110,6 +110,8 @@ class MainActivity : ComponentActivity() {
         val note by tagReader.note.collectAsState()
         var screen by rememberSaveable { mutableStateOf(Screen.Home) }
         var editingMode by rememberSaveable { mutableStateOf<String?>(null) }
+        // Where the mode editor goes back to: wherever it was opened from.
+        var modeReturn by rememberSaveable { mutableStateOf(Screen.Settings) }
         var pairing by rememberSaveable { mutableStateOf(false) }
         var blockingInfo by rememberSaveable { mutableStateOf(false) }
         var silenceInfo by rememberSaveable { mutableStateOf(false) }
@@ -143,7 +145,7 @@ class MainActivity : ComponentActivity() {
                 if (!state.onboarded) {
                     Onboarding(state, tagReader, onSaveMode = engine::saveMode, onFinish = engine::finishOnboarding)
                 } else {
-                    BackHandler(screen != Screen.Home) { screen = if (screen == Screen.Mode) Screen.Settings else Screen.Home }
+                    BackHandler(screen != Screen.Home) { screen = if (screen == Screen.Mode) modeReturn else Screen.Home }
                     AnimatedContent(screen, transitionSpec = { fadeIn() togetherWith fadeOut() }, label = "screen") { s ->
                         when (s) {
                             Screen.Home -> HomeScreen(
@@ -151,11 +153,11 @@ class MainActivity : ComponentActivity() {
                                 onActivity = { screen = Screen.Activity },
                                 onSettings = { screen = Screen.Settings },
                                 onSelectMode = engine::select,
-                                onNewMode = { editingMode = null; screen = Screen.Mode },
+                                onNewMode = { editingMode = null; modeReturn = Screen.Home; screen = Screen.Mode },
                                 onTimer = engine::setTimer,
                                 onHoldStart = {
                                     if (engine.startByHold() == Change.NoMode) {
-                                        editingMode = state.selectedMode?.id; screen = Screen.Mode
+                                        editingMode = state.selectedMode?.id; modeReturn = Screen.Home; screen = Screen.Mode
                                     }
                                 },
                                 onEmergency = { engine.emergencyUnlock() },
@@ -166,7 +168,7 @@ class MainActivity : ComponentActivity() {
                             Screen.Settings -> SettingsScreen(
                                 state,
                                 onBack = { screen = Screen.Home },
-                                onEditMode = { editingMode = it; screen = Screen.Mode },
+                                onEditMode = { editingMode = it; modeReturn = Screen.Settings; screen = Screen.Mode },
                                 onPair = { tagReader.startPairing(); pairing = true },
                                 onRenameTag = engine::renameTag,
                                 onUnpair = engine::unpair,
@@ -176,9 +178,9 @@ class MainActivity : ComponentActivity() {
                                 initial = state.mode(editingMode),
                                 usedHues = state.modes.map { it.hue }.toSet(),
                                 canDelete = state.modes.size > 1,
-                                onSave = { engine.saveMode(it); engine.select(it.id); screen = Screen.Settings },
-                                onDelete = { engine.deleteMode(it); screen = Screen.Settings },
-                                onCancel = { screen = Screen.Settings },
+                                onSave = { engine.saveMode(it); engine.select(it.id); screen = modeReturn },
+                                onDelete = { engine.deleteMode(it); screen = modeReturn },
+                                onCancel = { screen = modeReturn },
                                 onNeedSilenceAccess = { silenceInfo = true },
                             )
                         }
