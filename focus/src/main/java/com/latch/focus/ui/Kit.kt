@@ -102,9 +102,11 @@ fun ListRow(
     titleColor: Color = palette.text,
     chevron: Boolean = false,
     enabled: Boolean = true,
-    onClick: (() -> Unit)? = null,
     leading: (@Composable () -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
+    // Last on purpose: `ListRow("Title") { ... }` must mean "on tap". When `trailing` was last, that block ran as
+    // composable content on every recomposition, which reopened dialogs and launched system settings by itself.
+    onClick: (() -> Unit)? = null,
 ) {
     var m = modifier.fillMaxWidth().heightIn(min = 52.dp)
     if (onClick != null) m = m.clickable(enabled = enabled, onClick = onClick)
