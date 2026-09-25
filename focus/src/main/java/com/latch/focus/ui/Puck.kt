@@ -123,7 +123,7 @@ fun Puck(
                     val time = Stats.clock(remaining ?: (now - active.start))
                     Text(active.modeName.uppercase(), style = Type.caption, color = color)
                     Text(time, style = Type.hero.copy(fontSize = if (time.length > 5) 52.sp else 72.sp), color = Color(0xFFF1F1EE))
-                    Text(if (remaining != null) "left" else "latched", style = Type.footnote, color = Color(0xFFF1F1EE).copy(alpha = 0.5f))
+                    Text(if (remaining != null) "left" else rememberWord(Words.state, active.start).lowercase(), style = Type.footnote, color = Color(0xFFF1F1EE).copy(alpha = 0.5f))
                 } else {
                     Icon(LatchGlyph, null, tint = color, modifier = Modifier.size(40.dp))
                     Spacer(Modifier.height(10.dp))

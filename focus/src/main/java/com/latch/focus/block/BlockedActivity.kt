@@ -57,6 +57,8 @@ import com.latch.focus.latch
 import com.latch.focus.ui.EmergencySheet
 import com.latch.focus.ui.GhostButton
 import com.latch.focus.ui.LatchGlyph
+import com.latch.focus.ui.Words
+import com.latch.focus.ui.rememberWord
 import com.latch.focus.ui.goHome
 import com.latch.focus.ui.rememberNow
 import com.latch.focus.ui.theme.LatchTheme
@@ -137,7 +139,7 @@ class BlockedActivity : ComponentActivity() {
                 Text(app?.first ?: "This app", style = Type.largeTitle.copy(fontSize = 40.sp, lineHeight = 44.sp), color = white)
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    if (active != null) "is latched by ${active.modeName}" else "is latched",
+                    rememberWord(Words.locked, pkg),
                     style = Type.body, color = white.copy(alpha = 0.55f),
                 )
 

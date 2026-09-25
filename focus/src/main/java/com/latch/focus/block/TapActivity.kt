@@ -49,6 +49,8 @@ import com.latch.focus.latch
 import com.latch.focus.nfc.TagReader
 import com.latch.focus.ui.IconTile
 import com.latch.focus.ui.LatchGlyph
+import com.latch.focus.ui.Words
+import com.latch.focus.ui.rememberWord
 import com.latch.focus.ui.apps
 import com.latch.focus.ui.InkButton
 import com.latch.focus.ui.theme.LatchTheme
@@ -118,7 +120,7 @@ class TapActivity : ComponentActivity() {
                     .clip(RoundedCornerShape(28.dp)).background(p.bg).padding(22.dp),
             ) {
                 when (c) {
-                    is Change.Started -> Header(Icons.Rounded.Check, p.solid(c.active.hue), "Latched",
+                    is Change.Started -> Header(Icons.Rounded.Check, p.solid(c.active.hue), Words.pick(Words.state),
                         "${c.active.modeName} · ${apps(c.active.blocked.size)} locked. Tap again to unlatch.")
                     is Change.Ended -> Header(Icons.Rounded.LockOpen, p.solid(Hue.Fern), "Unlatched",
                         "You stayed off for ${Stats.format(c.session.length)}." +
