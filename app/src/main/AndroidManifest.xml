@@ -87,5 +87,16 @@
             </intent-filter>
             <meta-data android:name="android.accessibilityservice" android:resource="@xml/focus_blocker" />
         </service>
+
+        <!-- Optional: hides notifications from blocked apps during Focus. -->
+        <service
+            android:name=".focus.FocusSilencer"
+            android:exported="false"
+            android:label="@string/focus_silencer_label"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
     </application>
 </manifest>

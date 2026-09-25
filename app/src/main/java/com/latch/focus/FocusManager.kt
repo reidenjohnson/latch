@@ -15,17 +15,19 @@ enum class FocusMode { Block, AllowOnly }
 
 data class FocusTag(val uid: String, val name: String, val pairedAt: Long)
 
-data class FocusSession(val start: Long, val end: Long, val emergency: Boolean) {
+data class FocusSession(val start: Long, val end: Long, val emergency: Boolean, val hidden: Int = 0) {
     val length: Long get() = end - start
 }
 
 /** A running Focus session. [blocked] is fixed when it starts, so editing settings can't change it mid-session. */
-data class ActiveFocus(val start: Long, val blocked: Set<String>)
+data class ActiveFocus(val start: Long, val blocked: Set<String>, val hidden: Int = 0)
 
 data class FocusState(
     val tags: List<FocusTag> = emptyList(),
     val apps: Set<String> = emptySet(),
     val mode: FocusMode = FocusMode.Block,
+    /** Hide notifications from blocked apps during Focus (needs notification access). */
+    val silence: Boolean = false,
     val active: ActiveFocus? = null,
     val sessions: List<FocusSession> = emptyList(),
 ) {
@@ -83,7 +85,7 @@ class FocusManager(private val context: Context) {
 
     private fun end(emergency: Boolean): FocusResult {
         val active = _state.value.active ?: return FocusResult.NotPaired
-        val session = FocusSession(active.start, System.currentTimeMillis(), emergency)
+        val session = FocusSession(active.start, System.currentTimeMillis(), emergency, active.hidden)
         commit { it.copy(active = null, sessions = (listOf(session) + it.sessions).take(MAX_SESSIONS)) }
         notifier.cancel()
         return FocusResult.Ended(session)
@@ -98,6 +100,13 @@ class FocusManager(private val context: Context) {
     fun rename(uid: String, name: String) = edit { s -> s.copy(tags = s.tags.map { if (it.uid == uid) it.copy(name = name.trim().ifEmpty { it.name }) else it }) }
     fun setApps(apps: Set<String>) = edit { it.copy(apps = apps) }
     fun setMode(mode: FocusMode) = edit { it.copy(mode = mode) }
+    fun setSilence(on: Boolean) = edit { it.copy(silence = on) }
+
+    /** Called by [FocusSilencer] each time it hides a notification. */
+    fun countHidden() {
+        if (_state.value.active == null) return
+        commit { s -> s.copy(active = s.active?.let { it.copy(hidden = it.hidden + 1) }) }
+    }
     fun clearSessions() = edit { it.copy(sessions = emptyList()) }
 
     private fun edit(change: (FocusState) -> FocusState) {
@@ -116,8 +125,9 @@ class FocusManager(private val context: Context) {
             .put("tags", JSONArray().also { a -> s.tags.forEach { a.put(JSONObject().put("uid", it.uid).put("name", it.name).put("pairedAt", it.pairedAt)) } })
             .put("apps", JSONArray(s.apps.toList()))
             .put("mode", s.mode.name)
-            .put("active", s.active?.let { JSONObject().put("start", it.start).put("blocked", JSONArray(it.blocked.toList())) } ?: JSONObject.NULL)
-            .put("sessions", JSONArray().also { a -> s.sessions.forEach { a.put(JSONObject().put("start", it.start).put("end", it.end).put("emergency", it.emergency)) } })
+            .put("silence", s.silence)
+            .put("active", s.active?.let { JSONObject().put("start", it.start).put("blocked", JSONArray(it.blocked.toList())).put("hidden", it.hidden) } ?: JSONObject.NULL)
+            .put("sessions", JSONArray().also { a -> s.sessions.forEach { a.put(JSONObject().put("start", it.start).put("end", it.end).put("emergency", it.emergency).put("hidden", it.hidden)) } })
         runCatching {
             val tmp = File(file.parentFile, "focus.json.tmp")
             tmp.writeText(o.toString())
@@ -133,13 +143,14 @@ class FocusManager(private val context: Context) {
             (0 until a.length()).map { a.getJSONObject(it) }.map { FocusTag(it.getString("uid"), it.getString("name"), it.getLong("pairedAt")) }
         }.orEmpty()
         val sessions = o.optJSONArray("sessions")?.let { a ->
-            (0 until a.length()).map { a.getJSONObject(it) }.map { FocusSession(it.getLong("start"), it.getLong("end"), it.optBoolean("emergency")) }
+            (0 until a.length()).map { a.getJSONObject(it) }.map { FocusSession(it.getLong("start"), it.getLong("end"), it.optBoolean("emergency"), it.optInt("hidden")) }
         }.orEmpty()
         FocusState(
             tags = tags,
             apps = strings(o.optJSONArray("apps")),
             mode = runCatching { FocusMode.valueOf(o.getString("mode")) }.getOrDefault(FocusMode.Block),
-            active = o.optJSONObject("active")?.let { ActiveFocus(it.getLong("start"), strings(it.optJSONArray("blocked"))) },
+            silence = o.optBoolean("silence"),
+            active = o.optJSONObject("active")?.let { ActiveFocus(it.getLong("start"), strings(it.optJSONArray("blocked")), it.optInt("hidden")) },
             sessions = sessions,
         )
     }.getOrDefault(FocusState())

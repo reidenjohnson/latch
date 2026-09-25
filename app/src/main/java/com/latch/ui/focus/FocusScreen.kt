@@ -71,6 +71,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.latch.focus.Essentials
 import com.latch.focus.FocusBlocker
+import com.latch.focus.FocusSilencer
+import androidx.compose.material3.Switch
+import androidx.compose.material.icons.rounded.NotificationsOff
 import com.latch.focus.FocusManager
 import com.latch.focus.FocusMode
 import com.latch.focus.FocusSession
@@ -105,7 +108,9 @@ fun FocusScreen(focus: FocusManager, nfc: NfcController) {
     var picking by rememberSaveable { mutableStateOf(false) }
     var disclosure by rememberSaveable { mutableStateOf(false) }
     val apps by rememberApps()
-    val notificationsAllowed = rememberNotificationsAllowed()
+    val notificationsAllowed = rememberOnResume { notificationsAllowed(context) }
+    val silenceAllowed = rememberOnResume { FocusSilencer.allowed(context) }
+    var silenceDisclosure by rememberSaveable { mutableStateOf(false) }
 
     LazyColumn(
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 32.dp),
@@ -141,7 +146,16 @@ fun FocusScreen(focus: FocusManager, nfc: NfcController) {
             item { BlockerOffCard { disclosure = true } }
         }
 
-        item { AppsCard(state, apps, locked = active != null, onEdit = { picking = true }, onMode = focus::setMode) }
+        item {
+            AppsCard(
+                state, apps, locked = active != null, onEdit = { picking = true }, onMode = focus::setMode,
+                silenceAllowed = silenceAllowed.value,
+                onSilence = { on ->
+                    focus.setSilence(on)
+                    if (on && !silenceAllowed.value) silenceDisclosure = true
+                },
+            )
+        }
         item {
             TagsCard(
                 state, locked = active != null,
@@ -159,6 +173,28 @@ fun FocusScreen(focus: FocusManager, nfc: NfcController) {
             state, apps,
             onDismiss = { picking = false },
             onSave = { focus.setApps(it); picking = false },
+        )
+    }
+    if (silenceDisclosure) {
+        AlertDialog(
+            onDismissRequest = { silenceDisclosure = false },
+            icon = { Icon(Icons.Rounded.NotificationsOff, contentDescription = null) },
+            title = { Text("Hide notifications from blocked apps") },
+            text = {
+                Text(
+                    "During Focus, Latch clears new notifications from the apps it blocks, so they can't pull you back in. " +
+                        "Calls, alarms and media controls are never touched. The messages are still in the app afterwards.\n\n" +
+                        "Android calls this \"notification access\". Latch only checks which app a notification is from, " +
+                        "and nothing leaves your phone. On the next screen, turn on Latch.",
+                )
+            },
+            confirmButton = {
+                Button(onClick = {
+                    silenceDisclosure = false
+                    context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                }) { Text("Open settings") }
+            },
+            dismissButton = { TextButton(onClick = { silenceDisclosure = false }) { Text("Not now") } },
         )
     }
     if (disclosure) {
@@ -323,7 +359,10 @@ private fun NotificationsCard(onAllowed: () -> Unit) {
 // ---------------------------------------------------------------- Settings cards
 
 @Composable
-private fun AppsCard(state: FocusState, apps: List<AppInfo>?, locked: Boolean, onEdit: () -> Unit, onMode: (FocusMode) -> Unit) {
+private fun AppsCard(
+    state: FocusState, apps: List<AppInfo>?, locked: Boolean, onEdit: () -> Unit, onMode: (FocusMode) -> Unit,
+    silenceAllowed: Boolean, onSilence: (Boolean) -> Unit,
+) {
     LatchCard {
         Column(Modifier.padding(18.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -353,6 +392,24 @@ private fun AppsCard(state: FocusState, apps: List<AppInfo>?, locked: Boolean, o
                     chosen.take(9).forEach { a -> a.icon?.let { Image(it, contentDescription = a.label, modifier = Modifier.size(30.dp)) } }
                     if (chosen.size > 9) Text("+${chosen.size - 9}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
+            }
+            Spacer(Modifier.height(8.dp))
+            val needsAccess = state.silence && !silenceAllowed
+            Row(Modifier.fillMaxWidth().alpha(if (locked) 0.5f else 1f), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Hide their notifications", style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        if (needsAccess) "Needs notification access. Tap the switch to set it up."
+                        else "Clears new ones during Focus. Calls and alarms still come through.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (needsAccess) Accent.amber else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Spacer(Modifier.size(12.dp))
+                Switch(
+                    checked = state.silence && silenceAllowed, enabled = !locked,
+                    onCheckedChange = { on -> onSilence(if (needsAccess) true else on) },
+                )
             }
         }
     }
@@ -467,6 +524,12 @@ private fun SessionRow(s: FocusSession) {
         Column(Modifier.weight(1f)) {
             Text("$day · ${time.format(Date(s.start))} – ${time.format(Date(s.end))}", style = MaterialTheme.typography.bodyMedium)
             if (s.emergency) Text("Ended with emergency unlock", style = MaterialTheme.typography.bodySmall, color = Accent.amber)
+            if (s.hidden > 0) {
+                Text(
+                    "${s.hidden} notification${if (s.hidden == 1) "" else "s"} hidden",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
         Text(FocusStats.format(s.length), style = MaterialTheme.typography.titleSmall)
     }
@@ -477,10 +540,19 @@ private fun SessionRow(s: FocusSession) {
 @Composable
 private fun AppsPicker(state: FocusState, apps: List<AppInfo>?, onDismiss: () -> Unit, onSave: (Set<String>) -> Unit) {
     val context = LocalContext.current
+    // First time in block mode: start with likely time sinks already checked, so setup is usually just "Save".
+    val firstPick = state.apps.isEmpty() && state.mode == FocusMode.Block
     var chosen by remember { mutableStateOf(state.apps) }
+    var prefilled by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
     var essentials by remember { mutableStateOf<Set<String>>(emptySet()) }
     LaunchedEffect(Unit) { essentials = withContext(Dispatchers.IO) { Essentials.of(context) } }
+    LaunchedEffect(apps, essentials) {
+        if (firstPick && !prefilled && apps != null && essentials.isNotEmpty()) {
+            chosen = apps.filter { it.suggested && it.pkg !in essentials }.map { it.pkg }.toSet()
+            prefilled = true
+        }
+    }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -504,34 +576,52 @@ private fun AppsPicker(state: FocusState, apps: List<AppInfo>?, onDismiss: () ->
                 if (apps == null) {
                     CircularProgressIndicator(Modifier.align(Alignment.CenterHorizontally).padding(24.dp))
                 } else {
-                    // Chosen apps first so it's easy to see and undo what's picked.
-                    val list = apps
-                        .filter { query.isBlank() || it.label.contains(query, true) }
-                        .sortedBy { if (it.pkg in state.apps) 0 else 1 }
+                    val matches = apps.filter { query.isBlank() || it.label.contains(query, true) }
+                    // Block mode: likely time sinks up top, then the full list. Allow-only mode: just the full list.
+                    val suggested = if (state.mode == FocusMode.Block) matches.filter { it.suggested && it.pkg !in essentials } else emptyList()
+                    val rest = matches - suggested.toSet()
+                    val toggle: (AppInfo) -> Unit = { app -> chosen = if (app.pkg in chosen) chosen - app.pkg else chosen + app.pkg }
                     LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
-                        items(list, key = { it.pkg }) { app ->
+                        if (suggested.isNotEmpty()) {
+                            item(key = "h-suggested") { PickerHeader("Suggested", "Social, video and game apps on your phone") }
+                            items(suggested, key = { "s-" + it.pkg }) { app -> PickerRow(app, app.pkg in chosen, false, toggle) }
+                            item(key = "h-all") { PickerHeader("All apps", null) }
+                        }
+                        items(rest, key = { it.pkg }) { app ->
                             val always = app.pkg in essentials
-                            val checked = app.pkg in chosen && !always
-                            Row(
-                                Modifier.fillMaxWidth()
-                                    .clickable(enabled = !always) { chosen = if (checked) chosen - app.pkg else chosen + app.pkg }
-                                    .padding(vertical = 8.dp, horizontal = 4.dp)
-                                    .alpha(if (always) 0.5f else 1f),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                app.icon?.let { Image(it, contentDescription = null, modifier = Modifier.size(40.dp)) }
-                                Spacer(Modifier.size(14.dp))
-                                Column(Modifier.weight(1f)) {
-                                    Text(app.label, style = MaterialTheme.typography.titleMedium)
-                                    if (always) Text("Always allowed", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
-                                Checkbox(checked = checked, onCheckedChange = null, enabled = !always)
-                            }
+                            PickerRow(app, app.pkg in chosen && !always, always, toggle)
                         }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun PickerHeader(title: String, subtitle: String?) {
+    Column(Modifier.fillMaxWidth().padding(start = 4.dp, top = 14.dp, bottom = 6.dp)) {
+        Text(title.uppercase(), style = MaterialTheme.typography.labelMedium, color = Accent.teal)
+        subtitle?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+    }
+}
+
+@Composable
+private fun PickerRow(app: AppInfo, checked: Boolean, always: Boolean, onToggle: (AppInfo) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth()
+            .clickable(enabled = !always) { onToggle(app) }
+            .padding(vertical = 8.dp, horizontal = 4.dp)
+            .alpha(if (always) 0.5f else 1f),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        app.icon?.let { Image(it, contentDescription = null, modifier = Modifier.size(40.dp)) }
+        Spacer(Modifier.size(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(app.label, style = MaterialTheme.typography.titleMedium)
+            if (always) Text("Always allowed", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Checkbox(checked = checked, onCheckedChange = null, enabled = !always)
     }
 }
 
@@ -545,18 +635,18 @@ private fun rememberApps(): androidx.compose.runtime.State<List<AppInfo>?> {
     return apps
 }
 
-/** Re-checked on resume, since the user can change it in system settings. */
+private fun notificationsAllowed(context: android.content.Context) = Build.VERSION.SDK_INT < 33 ||
+    context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+
+/** A permission-style check, re-run on resume since the user can change it in system settings. */
 @Composable
-private fun rememberNotificationsAllowed(): androidx.compose.runtime.MutableState<Boolean> {
-    val context = LocalContext.current
-    fun check() = Build.VERSION.SDK_INT < 33 ||
-        context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-    val allowed = remember { mutableStateOf(check()) }
+private fun rememberOnResume(check: () -> Boolean): androidx.compose.runtime.MutableState<Boolean> {
+    val value = remember { mutableStateOf(check()) }
     val owner = LocalLifecycleOwner.current
     DisposableEffect(owner) {
-        val obs = LifecycleEventObserver { _, e -> if (e == Lifecycle.Event.ON_RESUME) allowed.value = check() }
+        val obs = LifecycleEventObserver { _, e -> if (e == Lifecycle.Event.ON_RESUME) value.value = check() }
         owner.lifecycle.addObserver(obs)
         onDispose { owner.lifecycle.removeObserver(obs) }
     }
-    return allowed
+    return value
 }

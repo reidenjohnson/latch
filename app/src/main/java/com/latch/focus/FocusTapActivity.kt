@@ -94,7 +94,8 @@ class FocusTapActivity : ComponentActivity() {
                 "${r.blockedCount} apps blocked. Tap your tag again to end." +
                     if (!r.blockerOn) "\nBlocking is turned off. Open Latch to turn it on." else "",
             )
-            is FocusResult.Ended -> Triple(x.tealGradient, "Focus off", "You stayed focused for ${FocusStats.format(r.session.length)}.")
+            is FocusResult.Ended -> Triple(x.tealGradient, "Focus off", "You stayed focused for ${FocusStats.format(r.session.length)}." +
+                if (r.session.hidden > 0) "\n${r.session.hidden} notification${if (r.session.hidden == 1) "" else "s"} hidden." else "")
             FocusResult.NotPaired -> Triple(x.amberGradient, "Not your Focus tag", "This tag isn't paired with this phone. Pair it on Latch's Focus tab.")
             FocusResult.NoApps -> Triple(x.amberGradient, "No apps to block yet", "Open Latch and choose which apps Focus blocks.")
         }
