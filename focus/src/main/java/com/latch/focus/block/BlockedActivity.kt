@@ -61,7 +61,8 @@ import com.latch.focus.ui.Words
 import com.latch.focus.ui.rememberWord
 import com.latch.focus.ui.apps
 import com.latch.focus.ui.BANNER_TOP
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -125,9 +126,11 @@ class BlockedActivity : ComponentActivity() {
         val white = Color(0xFFF1F1EE)
         // Tapping your Latch while a locked app is open brings this screen up right away, which used to cover the
         // "Latched" card in a blink. So when the session is brand new, show that confirmation here instead.
-        var justLatched by remember { mutableStateOf(active != null && System.currentTimeMillis() - active.start < 4000) }
-        LaunchedEffect(Unit) { if (justLatched) { delay(3000); justLatched = false } }
-        val latchedWord = rememberWord(Words.state)
+        val snackbar = remember { SnackbarHostState() }
+        LaunchedEffect(Unit) {
+            val a = latch.state.value.active ?: return@LaunchedEffect
+            if (System.currentTimeMillis() - a.start < 4000) snackbar.showSnackbar("${Words.pick(Words.state)} · ${apps(a.blocked.size)} locked")
+        }
 
         Box(Modifier.fillMaxSize().background(ink)) {
             Column(
@@ -174,29 +177,8 @@ class BlockedActivity : ComponentActivity() {
                 }
             }
             // The "just latched" confirmation, in the upper part of the screen like the app's other confirmations.
-            AnimatedVisibility(
-                visible = justLatched && active != null,
-                enter = slideInVertically { -it } + fadeIn(),
-                exit = slideOutVertically { -it } + fadeOut(),
-                modifier = Modifier.align(Alignment.TopCenter).safeDrawingPadding().padding(start = 16.dp, end = 16.dp, top = BANNER_TOP),
-            ) {
-                Row(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color(0xFF232624)).padding(18.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(hue), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Rounded.Check, null, tint = Color.White, modifier = Modifier.size(22.dp))
-                    }
-                    Spacer(Modifier.width(14.dp))
-                    Column {
-                        Text(latchedWord, style = Type.headline, color = white)
-                        Text(
-                            "${active?.modeName ?: ""} · ${apps(active?.blocked?.size ?: 0)} locked. Tap again to unlatch.",
-                            style = Type.footnote, color = white.copy(alpha = 0.6f),
-                        )
-                    }
-                }
-            }
+            // The same message the app shows when you latch, in the same spot.
+            SnackbarHost(snackbar, Modifier.align(Alignment.TopCenter).safeDrawingPadding().padding(start = 16.dp, end = 16.dp, top = BANNER_TOP))
         }
         if (emergency) {
             EmergencySheet(state.emergencyUnlocks, onDismiss = { emergency = false }) {
