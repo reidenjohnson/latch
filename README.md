@@ -3,7 +3,7 @@
 A clean, fast NFC tag reader and writer for Android, with every feature free.
 
 Most NFC apps on the Play Store bury simple actions behind subscriptions and cluttered screens. Latch keeps
-it to four tabs, speaks plain English, and checks every write so you know the tag actually worked.
+it simple, speaks plain English, and checks every write so you know the tag actually worked.
 
 ## Features
 
@@ -59,12 +59,21 @@ Shows password status, the live scan count, ATQA/SAK and each record's raw bytes
   ([source](https://android.googlesource.com/platform/packages/modules/Nfc/+/refs/heads/main/NfcNci/src/com/android/nfc/NfcWifiProtectedSetup.java)),
   including attribute order for older Android versions.
 
-## Coming next: Focus
+## Focus
 
-Tap your own Latch tag to lock distracting apps like Instagram and YouTube. The only way to unlock is to
-tap the tag again, and Latch shows how long you stayed off. Blocking uses an Android Accessibility service
-and only affects the apps you choose. There's no root and no system changes, and uninstalling Latch undoes
-everything.
+A free take on the Brick idea: pair an NFC tag, choose the apps that eat your time, and leave the tag somewhere
+you have to walk to. Tap it to start Focus. Blocked apps are covered with a "You're in Focus" screen until you
+tap the tag again, and Latch shows how long you stayed off.
+
+- **Works with Latch closed.** A Focus tag carries a Latch external record plus an Android Application Record,
+  so a tap from anywhere toggles Focus.
+- **Block these, or allow only these.** Block a short list, or block everything except a short list.
+- **Stats.** Time in Focus today and this week, your longest session, and recent sessions.
+- **Safe by design.** The phone app, Settings, the home screen, keyboards, emergency apps and Latch itself are
+  never blocked. A 10-second hold always unlocks in an emergency. There's no root, no device admin and no
+  system changes, and uninstalling Latch undoes everything.
+- **Private.** Blocking uses an Accessibility service that only listens for "which app opened". It can't read
+  screen content (`canRetrieveWindowContent="false"`), and nothing leaves the phone.
 
 ## Tech
 
@@ -74,8 +83,9 @@ No third-party dependencies beyond AndroidX. Min SDK 30 (Android 11).
 ```
 app/src/main/java/com/latch/
   nfc/      NFC logic, no UI: controller, tag I/O, NDEF parser, payload builders
+  focus/    Focus: session state, blocker (Accessibility service), block screen, tag-tap handler
   data/     history store
-  ui/       Compose screens (read, write, tools, history), components, theme
+  ui/       Compose screens (read, write, focus, tools, history), components, theme
 ```
 
 ## Build

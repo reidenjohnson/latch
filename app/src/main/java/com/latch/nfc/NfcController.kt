@@ -5,6 +5,8 @@ import android.nfc.Tag
 import android.util.Log
 import com.latch.data.HistoryAction
 import com.latch.data.HistoryStore
+import com.latch.focus.FocusManager
+import com.latch.focus.FocusResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,7 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * If an operation is armed (the scan sheet is open), the tag goes to that operation. Otherwise, if the Read tab
  * is showing, the tag is read. Any other tap is ignored, so a tag bumped while filling in a form does nothing.
  */
-class NfcController(private val context: Context, private val history: HistoryStore) {
+class NfcController(private val context: Context, private val history: HistoryStore, private val focus: FocusManager) {
 
     private val haptics = Haptics(context)
     private companion object {
@@ -34,6 +36,10 @@ class NfcController(private val context: Context, private val history: HistorySt
 
     private val _readProblem = MutableStateFlow<Problem?>(null)
     val readProblem: StateFlow<Problem?> = _readProblem.asStateFlow()
+
+    /** The result of the last Focus tag tap handled inside Latch, so the UI can jump to the Focus tab. */
+    private val _focusEvent = MutableStateFlow<Pair<Long, FocusResult>?>(null)
+    val focusEvent: StateFlow<Pair<Long, FocusResult>?> = _focusEvent.asStateFlow()
 
     fun setAvailability(value: NfcAvailability) { _availability.value = value }
     fun arm(op: Operation) { _sheet.value = SheetState.Waiting(op) }
@@ -70,8 +76,16 @@ class NfcController(private val context: Context, private val history: HistorySt
                     read(tag)
                 }
             }
-            SheetState.Hidden -> read(tag)
+            SheetState.Hidden -> if (focus.state.value.isPaired(TagIo.uid(tag))) toggleFocus(tag) else read(tag)
         }
+    }
+
+    /** A paired Focus tag tapped while Latch is open does what it does everywhere else: toggle Focus. */
+    private fun toggleFocus(tag: Tag) {
+        val r = focus.toggle(TagIo.uid(tag))
+        Log.d(TAG, "focus toggle: $r")
+        _focusEvent.value = System.currentTimeMillis() to r
+        if (r is FocusResult.Started || r is FocusResult.Ended) haptics.success() else haptics.error()
     }
 
     private fun read(tag: Tag) {
@@ -92,6 +106,12 @@ class NfcController(private val context: Context, private val history: HistorySt
     private fun perform(state: SheetState.Waiting, tag: Tag) {
         val op = state.op
         val next: SheetState = try {
+            // Don't let an armed write wipe the tag that ends Focus. Password and lock tools are fine, they protect it.
+            val overwrites = op is Operation.Write || op is Operation.Erase || op is Operation.CopyTarget ||
+                op is Operation.Batch || op is Operation.Raw
+            if (overwrites && focus.state.value.isPaired(TagIo.uid(tag))) {
+                throw NfcProblem(Problem("That's your Focus tag", "Unpair it on the Focus tab first if you want to reuse it."))
+            }
             when (op) {
                 is Operation.Write -> {
                     val report = TagIo.write(tag, op.message, op.password, op.mirror)
@@ -147,6 +167,7 @@ class NfcController(private val context: Context, private val history: HistorySt
                         if (op.enable) "The tag now counts every time it's read. See it on the Read tab." else null,
                     )
                 }
+                is Operation.PairFocus -> pairFocus(op, tag)
                 is Operation.Raw -> {
                     val report = TagIo.raw(tag, op.tech, op.commands)
                     SheetState.Done(op, "Commands sent", null, report)
@@ -166,6 +187,21 @@ class NfcController(private val context: Context, private val history: HistorySt
                 else -> haptics.success()
             }
         }
+    }
+
+    private fun pairFocus(op: Operation.PairFocus, tag: Tag): SheetState {
+        if (focus.state.value.active != null) throw NfcProblem(Problem("Focus is on", "End Focus before pairing a new tag."))
+        val uid = TagIo.uid(tag)
+        val lockedNote = try {
+            TagIo.write(tag, Payloads.focus(), op.password)
+            null
+        } catch (e: NfcProblem) {
+            // A read-only tag can still be paired by its ID. It just can't open Latch on its own.
+            if (e.problem != Problems.locked) throw e
+            "This tag is locked, so it only works while Latch is open."
+        }
+        focus.pair(uid)
+        return SheetState.Done(op, "Tag paired", lockedNote ?: "Tap it anytime, even with Latch closed, to start or end Focus.")
     }
 
     private fun batchStep(op: Operation.Batch, tag: Tag): SheetState {

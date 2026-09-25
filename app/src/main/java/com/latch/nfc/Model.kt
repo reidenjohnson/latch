@@ -59,6 +59,8 @@ sealed interface Operation {
     data class RemovePassword(override val password: String? = null) : Operation
     data class Counter(val enable: Boolean, override val password: String? = null) : Operation
     data class Raw(val tech: RawTech, val commands: List<ByteArray>) : Operation
+    /** Writes a Latch Focus record to the tag and pairs it with this phone. */
+    data class PairFocus(override val password: String? = null) : Operation
 }
 
 fun Operation.withPassword(pw: String): Operation = when (this) {
@@ -69,6 +71,7 @@ fun Operation.withPassword(pw: String): Operation = when (this) {
     is Operation.SetPassword -> copy(password = pw)
     is Operation.RemovePassword -> copy(password = pw)
     is Operation.Counter -> copy(password = pw)
+    is Operation.PairFocus -> copy(password = pw)
     else -> this
 }
 

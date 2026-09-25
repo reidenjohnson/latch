@@ -176,6 +176,9 @@ object NdefParser {
                 details = listOf("Protection" to "AES-256-GCM"), sealed = r.payload,
             )
         }
+        if (type == Payloads.FOCUS_TYPE) {
+            return ParsedRecord(RecordKind.App, "Latch Focus tag", "Tap to start or end Focus", details = listOf("Record" to type))
+        }
         if (type == "android.com:pkg") {
             val pkg = String(r.payload, Charsets.US_ASCII)
             val pm = context.packageManager

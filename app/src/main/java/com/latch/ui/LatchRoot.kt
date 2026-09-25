@@ -14,6 +14,10 @@ import androidx.compose.material.icons.rounded.EditNote
 import androidx.compose.material.icons.rounded.Handyman
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Nfc
+import androidx.compose.material.icons.rounded.SelfImprovement
+import com.latch.ui.focus.FocusScreen
+import com.latch.focus.FocusResult
+import com.latch.focus.FocusStats
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -57,12 +61,13 @@ import com.latch.ui.write.WriteScreen
 enum class Tab(val label: String, val icon: ImageVector) {
     Read("Read", Icons.Rounded.Nfc),
     Write("Write", Icons.Rounded.EditNote),
+    Focus("Focus", Icons.Rounded.SelfImprovement),
     Tools("Tools", Icons.Rounded.Handyman),
     History("History", Icons.Rounded.History),
 }
 
 @Composable
-fun LatchRoot(app: LatchApplication) {
+fun LatchRoot(app: LatchApplication, focusRequest: Int = 0) {
     val nfc = app.nfc
     var tab by rememberSaveable { mutableStateOf(Tab.Read) }
     val sheet by nfc.sheet.collectAsState()
@@ -71,6 +76,25 @@ fun LatchRoot(app: LatchApplication) {
     val readProblem by nfc.readProblem.collectAsState()
     val writeState = remember { WriteState() } // lives here so switching tabs never wipes a half-built tag
     val snackbar = remember { SnackbarHostState() }
+    val focusEvent by nfc.focusEvent.collectAsState()
+
+    LaunchedEffect(focusRequest) { if (focusRequest > 0) tab = Tab.Focus }
+    // A Focus tag tapped inside Latch: jump to Focus and say what happened.
+    var handledFocusEvent by rememberSaveable { mutableStateOf(0L) } // so a rotation doesn't replay the last one
+    LaunchedEffect(focusEvent?.first) {
+        val (at, r) = focusEvent ?: return@LaunchedEffect
+        if (at == handledFocusEvent) return@LaunchedEffect
+        handledFocusEvent = at
+        tab = Tab.Focus
+        snackbar.showSnackbar(
+            when (r) {
+                is FocusResult.Started -> "Focus on · ${r.blockedCount} apps blocked"
+                is FocusResult.Ended -> "Focus off · ${FocusStats.format(r.session.length)}"
+                FocusResult.NoApps -> "Choose apps to block first"
+                FocusResult.NotPaired -> "That tag isn't paired"
+            },
+        )
+    }
 
     // A tag read while you're on another tab: tell the user and offer to jump to it.
     LaunchedEffect(lastRead?.time) {
@@ -120,6 +144,7 @@ fun LatchRoot(app: LatchApplication) {
                         onEdit = { specs -> app.handoff.pending.value = specs; tab = Tab.Write },
                     )
                     Tab.Write -> WriteScreen(writeState, nfc, app.templates, app.handoff)
+                    Tab.Focus -> FocusScreen(app.focus, nfc)
                     Tab.Tools -> ToolsScreen(nfc)
                     Tab.History -> HistoryScreen(app.history, nfc)
                 }
