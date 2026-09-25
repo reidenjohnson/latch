@@ -16,10 +16,15 @@ Two free Android apps built around NFC tags.
   of well-known apps), then shows every app below.
 - **Schedules and timers.** Modes can start and end on their own at set times. Manual sessions can end after
   30 minutes to 4 hours, or only when you tap.
-- **Start without your tag.** Press and hold the on-screen Latch for 5 seconds.
+- **Start without your tag.** Press and hold the on-screen Latch for 5 seconds. It buzzes harder as it builds, then latches.
+- **Need out sooner?** Unlatch later (the earliest is an hour from now, and it can only shorten a session), use an
+  optional passcode (for a parent or partner; stored only as a salted PBKDF2 hash), or hold for 10 seconds in an emergency.
 - **Hide notifications.** Optionally clears notifications from blocked apps during a session and counts them.
 - **Activity.** Today, this week, this month and all time, a streak, average and longest sessions, and a
   7-day chart colored by mode.
+- **A calm lock screen.** A blocked app is covered by a quiet screen that shows which app it is and how to unlatch.
+- **Minimal permissions.** Notifications are a normal yes/no prompt. Blocking and notification hiding each take one
+  tap into Android's settings, and Latch comes back to the front when you've turned them on.
 - **Safe by design.** Phone, Settings, the home screen, keyboards and emergency apps are never blocked. A
   10-second hold always unlocks in an emergency (and it's counted, not limited). There's no root, no device
   admin and no system changes, and uninstalling removes every restriction.
