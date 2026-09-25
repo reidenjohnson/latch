@@ -30,6 +30,7 @@ class Blocker : AccessibilityService() {
 
     override fun onServiceConnected() {
         _running.value = true
+        instance = this
         Grants.granted(this, Grants.Kind.Blocking)
         // A session just started while a blocked app was open (say, the tag was tapped over it): cover it now.
         scope.launch {
@@ -64,6 +65,7 @@ class Blocker : AccessibilityService() {
 
     override fun onDestroy() {
         _running.value = false
+        if (instance === this) instance = null
         scope.cancel()
         super.onDestroy()
     }
@@ -72,5 +74,13 @@ class Blocker : AccessibilityService() {
         private val _running = MutableStateFlow(false)
         /** True while Android has the service on and connected. */
         val running: StateFlow<Boolean> = _running.asStateFlow()
+
+        @Volatile private var instance: Blocker? = null
+
+        /**
+         * Presses the real Home button (GLOBAL_ACTION_HOME), so you land on your home screen rather than whatever was
+         * behind the lock screen. Returns false if the service isn't connected.
+         */
+        fun pressHome(): Boolean = instance?.performGlobalAction(GLOBAL_ACTION_HOME) ?: false
     }
 }

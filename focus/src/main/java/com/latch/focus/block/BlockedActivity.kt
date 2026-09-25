@@ -59,6 +59,15 @@ import com.latch.focus.ui.GhostButton
 import com.latch.focus.ui.LatchGlyph
 import com.latch.focus.ui.Words
 import com.latch.focus.ui.rememberWord
+import com.latch.focus.ui.apps
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Check
+import kotlinx.coroutines.delay
 import com.latch.focus.ui.goHome
 import com.latch.focus.ui.rememberNow
 import com.latch.focus.ui.theme.LatchTheme
@@ -89,7 +98,10 @@ class BlockedActivity : ComponentActivity() {
         pkg = intent.getStringExtra(EXTRA_PACKAGE)
     }
 
-    private fun leave() { goHome(this); finish() }
+    private fun leave() {
+        if (!Blocker.pressHome()) goHome(this)
+        finish()
+    }
 
     @Composable
     private fun Blocked() {
@@ -110,6 +122,11 @@ class BlockedActivity : ComponentActivity() {
         val hue = p.solid(active?.hue ?: Hue.Teal)
         val ink = Color(0xFF111312)
         val white = Color(0xFFF1F1EE)
+        // Tapping your Latch while a locked app is open brings this screen up right away, which used to cover the
+        // "Latched" card in a blink. So when the session is brand new, show that confirmation here instead.
+        var justLatched by remember { mutableStateOf(active != null && System.currentTimeMillis() - active.start < 4000) }
+        LaunchedEffect(Unit) { if (justLatched) { delay(3000); justLatched = false } }
+        val latchedWord = rememberWord(Words.state)
 
         Box(Modifier.fillMaxSize().background(ink)) {
             Column(
@@ -153,6 +170,30 @@ class BlockedActivity : ComponentActivity() {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     GhostButton("Emergency", color = white.copy(alpha = 0.4f)) { emergency = true }
                     GhostButton("Home", color = white.copy(alpha = 0.85f), onClick = ::leave)
+                }
+            }
+            // The "just latched" confirmation, at the bottom where the other confirmations live.
+            AnimatedVisibility(
+                visible = justLatched && active != null,
+                enter = slideInVertically { it } + fadeIn(),
+                exit = slideOutVertically { it } + fadeOut(),
+                modifier = Modifier.align(Alignment.BottomCenter).safeDrawingPadding().padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color(0xFF232624)).padding(18.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(hue), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Rounded.Check, null, tint = Color.White, modifier = Modifier.size(22.dp))
+                    }
+                    Spacer(Modifier.width(14.dp))
+                    Column {
+                        Text(latchedWord, style = Type.headline, color = white)
+                        Text(
+                            "${active?.modeName ?: ""} · ${apps(active?.blocked?.size ?: 0)} locked. Tap again to unlatch.",
+                            style = Type.footnote, color = white.copy(alpha = 0.6f),
+                        )
+                    }
                 }
             }
         }
