@@ -81,21 +81,25 @@ fun Puck(
     val hold = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    // Hold-to-latch build-up, Little Big Planet style: the disc trembles harder and the haptic ticks come faster
-    // the longer you hold, then it pops with a thud and a shockwave ring.
+    // Hold-to-latch build-up, Little Big Planet style: a continuous buzz that swells (felt and seen), then a pop.
+    // The look is a fast, tight side-to-side hum whose speed and width grow with the hold, not random jolts.
     var holding by remember { mutableStateOf(false) }
     var jitter by remember { mutableStateOf(Offset.Zero) }
     val pop = remember { Animatable(0f) }
     LaunchedEffect(holding) {
         if (!holding) { jitter = Offset.Zero; return@LaunchedEffect }
-        var lastTick = 0L
+        Buzz.ramp(context, HOLD_TO_START_SECONDS * 1000)
+        var phase = 0.0
+        var last = -1L
         while (holding) {
             withFrameMillis { t ->
-                val k = hold.value * hold.value // eases in: barely moving at first, shaking hard at the end
-                val amp = 7f * k
-                jitter = Offset((Random.nextFloat() * 2 - 1) * amp, (Random.nextFloat() * 2 - 1) * amp)
-                val gap = (320 - 270 * hold.value).toLong() // ticks speed up from ~3 a second to ~20
-                if (t - lastTick >= gap) { Buzz.tick(context, 0.15f + 0.85f * hold.value); lastTick = t }
+                val dt = if (last < 0) 0L else t - last
+                last = t
+                val k = hold.value * hold.value
+                val hz = 18 + 22 * k // the hum speeds up...
+                phase += 2 * Math.PI * hz * dt / 1000.0
+                val amp = 0.4f + 2.6f * k // ...and widens, but stays tight: a buzz, not a shake
+                jitter = Offset((kotlin.math.sin(phase) * amp).toFloat(), (kotlin.math.sin(phase * 1.7) * amp * 0.35f).toFloat())
             }
         }
         jitter = Offset.Zero
@@ -133,6 +137,7 @@ fun Puck(
                         val run = scope.launch {
                             hold.animateTo(1f, tween(HOLD_TO_START_SECONDS * 1000, easing = LinearEasing))
                             holding = false
+                            Buzz.stop(context)
                             Buzz.thud(context)
                             onHoldStart()
                             hold.snapTo(0f)
@@ -142,7 +147,7 @@ fun Puck(
                         }
                         tryAwaitRelease()
                         holding = false
-                        if (hold.value < 1f) { run.cancel(); scope.launch { hold.animateTo(0f, tween(250)) } }
+                        if (hold.value < 1f) { run.cancel(); Buzz.stop(context); scope.launch { hold.animateTo(0f, tween(250)) } }
                     })
                 },
             contentAlignment = Alignment.Center,
