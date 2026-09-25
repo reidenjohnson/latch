@@ -26,7 +26,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.LockOpen
-import androidx.compose.material.icons.rounded.Nfc
 import androidx.compose.material.icons.rounded.PriorityHigh
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,6 +48,8 @@ import com.latch.focus.data.Stats
 import com.latch.focus.latch
 import com.latch.focus.nfc.TagReader
 import com.latch.focus.ui.IconTile
+import com.latch.focus.ui.LatchGlyph
+import com.latch.focus.ui.apps
 import com.latch.focus.ui.InkButton
 import com.latch.focus.ui.theme.LatchTheme
 import com.latch.focus.ui.theme.Type
@@ -80,7 +81,7 @@ class TapActivity : ComponentActivity() {
         uid = TagReader.uid(tag)
         change = latch.tap(uid!!)
         val ok = change is Change.Started || change is Change.Ended
-        runCatching {
+        if (com.latch.focus.engine.Prefs.haptics.value) runCatching {
             val v = getSystemService(android.os.VibratorManager::class.java)?.defaultVibrator
             v?.vibrate(
                 if (ok) android.os.VibrationEffect.createPredefined(android.os.VibrationEffect.EFFECT_DOUBLE_CLICK)
@@ -117,14 +118,14 @@ class TapActivity : ComponentActivity() {
                     .clip(RoundedCornerShape(28.dp)).background(p.bg).padding(22.dp),
             ) {
                 when (c) {
-                    is Change.Started -> Header(Icons.Rounded.Check, p.solid(c.active.hue), "${c.active.modeName} is on",
-                        "${c.active.blocked.size} apps blocked. Tap your Latch again to end it.")
-                    is Change.Ended -> Header(Icons.Rounded.LockOpen, p.solid(Hue.Fern), "Nice work",
-                        "You stayed focused for ${Stats.format(c.session.length)}." +
+                    is Change.Started -> Header(Icons.Rounded.Check, p.solid(c.active.hue), "Latched",
+                        "${c.active.modeName} · ${apps(c.active.blocked.size)} locked. Tap again to unlatch.")
+                    is Change.Ended -> Header(Icons.Rounded.LockOpen, p.solid(Hue.Fern), "Unlatched",
+                        "You stayed off for ${Stats.format(c.session.length)}." +
                             if (c.session.hidden > 0) " ${c.session.hidden} notifications were held back." else "")
                     Change.NotPaired -> {
-                        Header(Icons.Rounded.Nfc, p.teal, "This is a Latch",
-                            "Tap it to lock distracting apps, and tap again to get them back. It isn't paired with this phone, so nothing was locked.")
+                        Header(LatchGlyph, p.teal, "This is a Latch",
+                            "Tap it to lock the apps that pull you in, and tap again to get them back. It isn't paired with this phone, so nothing was locked.")
                         Spacer(Modifier.height(18.dp))
                         InkButton("Use this Latch on my phone") { openApp(uid) }
                     }

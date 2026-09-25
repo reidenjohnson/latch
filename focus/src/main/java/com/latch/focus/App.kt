@@ -13,6 +13,7 @@ class App : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        com.latch.focus.engine.Prefs.load(this)
         engine = Engine(this)
         tags = TagReader(this, engine)
     }

@@ -24,7 +24,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.BarChart
-import androidx.compose.material.icons.rounded.Nfc
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.HealthAndSafety
 import androidx.compose.material.icons.rounded.Settings
@@ -87,28 +86,28 @@ fun HomeScreen(
         Spacer(Modifier.height(12.dp))
         when {
             !blockerOn -> Notice(Icons.Rounded.Shield, p.amber, "App blocking is off", "Latch can't cover apps until it's on.", "Turn on", onTurnOnBlocking)
-            state.tags.isEmpty() && active == null -> Notice(Icons.Rounded.Nfc, p.teal, "No Latch paired", "Pair a tag to start and end sessions.", "Pair", onPair)
+            state.tags.isEmpty() && active == null -> Notice(LatchGlyph, p.teal, "No Latch paired", "Pair a tag to latch and unlatch.", "Pair", onPair)
         }
 
         Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Puck(active, mode?.hue ?: com.latch.focus.data.Hue.Teal, mode?.name ?: "Focus", now, onHoldStart = onHoldStart)
+                Puck(active, mode?.hue ?: com.latch.focus.data.Hue.Teal, mode?.name ?: "Everyday", now, onHoldStart = onHoldStart)
                 Spacer(Modifier.height(8.dp))
                 AnimatedContent(active != null, transitionSpec = { fadeIn() togetherWith fadeOut() }, label = "hint") { on ->
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         if (on && active != null) {
-                            Text("Tap your Latch to end", style = Type.headline, color = p.text)
+                            Text("Tap your Latch to unlatch", style = Type.headline, color = p.text)
                             val ends = active.endsAt
                             Text(
                                 buildString {
-                                    append("${active.blocked.size} apps blocked")
-                                    if (ends != null) append(" · ends at ${DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(ends))}")
+                                    append("${apps(active.blocked.size)} locked")
+                                    if (ends != null) append(" · unlatches at ${DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(ends))}")
                                 },
                                 style = Type.footnote, color = p.dim,
                             )
                         } else {
                             Text(modeSummary(state), style = Type.footnote, color = p.dim, textAlign = TextAlign.Center)
-                            Text("or press and hold to start without it", style = Type.footnote, color = p.faint)
+                            Text("or press and hold to latch without it", style = Type.footnote, color = p.faint)
                         }
                     }
                 }
@@ -136,7 +135,7 @@ fun HomeScreen(
                 ) { Icon(Icons.Rounded.Add, "New mode", tint = p.dim, modifier = Modifier.size(20.dp)) }
             }
             Spacer(Modifier.height(16.dp))
-            Caption("Ends")
+            Caption("Unlatch")
             Row(Modifier.horizontalScroll(rememberScrollState())) {
                 Pills(
                     listOf(null to "When I tap", 30 to "30 min", 60 to "1 hour", 120 to "2 hours", 240 to "4 hours"),
@@ -205,7 +204,7 @@ fun EmergencySheet(used: Int, onDismiss: () -> Unit, onUnlock: () -> Unit) {
             Text("Emergency unlock", style = Type.title, color = p.text)
             Spacer(Modifier.height(6.dp))
             Text(
-                "Lost your Latch, or really need your apps? Hold the button for $EMERGENCY_SECONDS seconds to end this session. " +
+                "Lost your Latch, or really need your apps? Hold the button for $EMERGENCY_SECONDS seconds to unlatch. " +
                     "Calls, Settings and emergency apps are never blocked, so you don't need this to reach help.",
                 style = Type.callout, color = p.dim, textAlign = TextAlign.Center,
             )

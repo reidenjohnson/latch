@@ -43,11 +43,20 @@ class Engine(private val context: Context) {
     }
 
     init {
-        if (_state.value.modes.isEmpty()) {
-            val first = Mode(UUID.randomUUID().toString(), "Focus", Hue.Teal)
-            _state.value = _state.value.copy(modes = listOf(first), selectedModeId = first.id)
-        }
+        _state.value = withDefaultMode(_state.value)
         tick()
+    }
+
+    /** Every install needs at least one mode. It used to be called "Focus", which is Apple's word, so rename that one. */
+    private fun withDefaultMode(s: AppState): AppState {
+        if (s.modes.isEmpty()) {
+            val first = Mode(UUID.randomUUID().toString(), "Everyday", Hue.Teal)
+            return s.copy(modes = listOf(first), selectedModeId = first.id)
+        }
+        return s.copy(
+            modes = s.modes.map { if (it.name == "Focus") it.copy(name = "Everyday") else it },
+            active = s.active?.let { if (it.modeName == "Focus") it.copy(modeName = "Everyday") else it },
+        )
     }
 
     // ---- Sessions
@@ -82,6 +91,19 @@ class Engine(private val context: Context) {
         if (s.modes.size <= 1) s else s.copy(modes = s.modes.filterNot { it.id == id }, selectedModeId = s.selectedModeId.takeIf { it != id })
     }
     fun clearHistory() = edit { it.copy(sessions = emptyList()) }
+
+    /** Show the first-run screens again. Keeps modes, tags and history. */
+    fun replayOnboarding() = edit { it.copy(onboarded = false) }
+
+    /**
+     * Start over: forgets modes, paired tags and history, and goes back to first-run setup. Refused while latched,
+     * so it can't be used to skip the tag (the emergency unlock is the way out). Theme and haptics are kept.
+     */
+    fun resetAll(): Boolean {
+        if (locked) return false
+        apply { withDefaultMode(AppState()) to null }
+        return true
+    }
 
     val locked: Boolean get() = _state.value.active != null
 

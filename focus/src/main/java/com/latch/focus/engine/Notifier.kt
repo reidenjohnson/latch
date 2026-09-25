@@ -13,7 +13,7 @@ import com.latch.focus.MainActivity
 import com.latch.focus.R
 import com.latch.focus.data.Active
 
-/** The quiet "In Focus" notification with a live timer. Shown only if notifications are allowed. */
+/** The quiet "Latched" notification with a live timer. Shown only if notifications are allowed. */
 class Notifier(private val context: Context) {
     private val manager = context.getSystemService(NotificationManager::class.java)
 
@@ -23,8 +23,8 @@ class Notifier(private val context: Context) {
             context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
         ) return
         manager.createNotificationChannel(
-            NotificationChannel(CHANNEL, "Focus session", NotificationManager.IMPORTANCE_LOW).apply {
-                description = "Shows while a session is running"
+            NotificationChannel(CHANNEL, "While latched", NotificationManager.IMPORTANCE_LOW).apply {
+                description = "A quiet timer while your phone is latched"
                 setShowBadge(false)
             },
         )
@@ -35,8 +35,8 @@ class Notifier(private val context: Context) {
         val ends = active.endsAt
         val n = Notification.Builder(context, CHANNEL)
             .setSmallIcon(R.drawable.ic_stat_latch)
-            .setContentTitle("${active.modeName} is on")
-            .setContentText(if (ends != null) "Ends on its own, or tap your Latch." else "Tap your Latch to end it.")
+            .setContentTitle("Latched · ${active.modeName}")
+            .setContentText(if (ends != null) "Unlatches on its own, or tap your Latch." else "Tap your Latch to unlatch.")
             .setWhen(ends ?: active.start)
             .setShowWhen(true)
             .setUsesChronometer(true)

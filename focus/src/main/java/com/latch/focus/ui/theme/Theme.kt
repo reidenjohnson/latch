@@ -9,6 +9,8 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
@@ -114,9 +116,11 @@ val palette: Palette @Composable get() = LocalPalette.current
 
 /** Hanken Grotesk (SIL OFL) for everything. One family, tight tracking at large sizes, tabular digits for timers. */
 private fun hanken(w: Int) = Font(R.font.hanken_grotesk, FontWeight(w), variationSettings = FontVariation.Settings(FontVariation.weight(w)))
-val Hanken = FontFamily(hanken(400), hanken(500), hanken(600), hanken(700), hanken(800))
+val Hanken = FontFamily(hanken(300), hanken(400), hanken(500), hanken(600), hanken(700), hanken(800))
 
 object Type {
+    /** The one big number on the lock screen and the puck: light weight, tight, tabular. */
+    val hero = TextStyle(fontFamily = Hanken, fontWeight = FontWeight.Light, fontSize = 88.sp, lineHeight = 92.sp, letterSpacing = (-4).sp, fontFeatureSettings = "tnum")
     val display = TextStyle(fontFamily = Hanken, fontWeight = FontWeight.Medium, fontSize = 64.sp, letterSpacing = (-2).sp, fontFeatureSettings = "tnum")
     val largeTitle = TextStyle(fontFamily = Hanken, fontWeight = FontWeight.Bold, fontSize = 34.sp, lineHeight = 40.sp, letterSpacing = (-1).sp)
     val title = TextStyle(fontFamily = Hanken, fontWeight = FontWeight.Bold, fontSize = 24.sp, lineHeight = 30.sp, letterSpacing = (-0.5).sp)
@@ -128,9 +132,20 @@ object Type {
     val number = TextStyle(fontFamily = Hanken, fontWeight = FontWeight.SemiBold, fontSize = 28.sp, letterSpacing = (-0.8).sp, fontFeatureSettings = "tnum")
 }
 
+/** Dark or light, from the in-app choice (Settings > Appearance), falling back to the phone. */
+@Composable
+fun isDark(): Boolean {
+    val mode by com.latch.focus.engine.Prefs.theme.collectAsState()
+    return when (mode) {
+        com.latch.focus.engine.ThemeMode.System -> isSystemInDarkTheme()
+        com.latch.focus.engine.ThemeMode.Light -> false
+        com.latch.focus.engine.ThemeMode.Dark -> true
+    }
+}
+
 @Composable
 fun LatchTheme(content: @Composable () -> Unit) {
-    val p = if (isSystemInDarkTheme()) Dark else Light
+    val p = if (isDark()) Dark else Light
     // Material components (dialogs, pickers, switches) pick up the same palette.
     val scheme = if (p.dark) darkColorScheme(
         primary = p.ink, onPrimary = p.onInk, secondary = p.teal, tertiary = p.amber, error = p.brick,

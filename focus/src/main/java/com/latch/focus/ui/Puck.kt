@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Nfc
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -79,17 +78,19 @@ fun Puck(
         Canvas(Modifier.size(diameter + 40.dp)) {
             val r = size.minDimension / 2
             if (active != null) {
-                drawCircle(color.copy(alpha = 0.10f + 0.10f * glow), radius = r * (0.93f + 0.07f * glow))
+                // Latched: a thin ring in the mode's hue that slowly breathes, like the lock screen.
+                drawCircle(color.copy(alpha = 0.3f + 0.35f * glow), radius = r - 2.dp.toPx(), style = Stroke(1.5.dp.toPx()))
             } else {
                 drawCircle(color.copy(alpha = 0.10f), radius = r - 2.dp.toPx(), style = Stroke(1.5.dp.toPx()))
             }
         }
-        val fill = if (active != null) Brush.radialGradient(listOf(p.solid(active.hue), p.deep(active.hue)))
+        // Latched, the disc goes Carbon black in both themes: the phone is "asleep". Idle, it's a plain surface.
+        val fill = if (active != null) Brush.linearGradient(listOf(Color(0xFF1A1C1B), Color(0xFF111312)))
         else Brush.linearGradient(listOf(p.surface, p.surface))
         Box(
             Modifier.size(diameter)
                 .scale(1f - 0.03f * hold.value)
-                .shadow(if (active != null) 24.dp else 14.dp, CircleShape, ambientColor = color, spotColor = color.copy(alpha = 0.5f))
+                .shadow(if (active != null) 20.dp else 12.dp, CircleShape, ambientColor = Color.Black, spotColor = Color.Black.copy(alpha = 0.35f))
                 .clip(CircleShape)
                 .background(fill)
                 .pointerInput(active == null) {
@@ -118,12 +119,13 @@ fun Puck(
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
                 if (active != null) {
-                    Text(active.modeName.uppercase(), style = Type.caption, color = Color.White.copy(alpha = 0.8f))
                     val remaining = active.endsAt?.let { it - now }
-                    Text(Stats.clock(remaining ?: (now - active.start)), style = Type.display, color = Color.White)
-                    Text(if (remaining != null) "left" else "in focus", style = Type.footnote, color = Color.White.copy(alpha = 0.75f))
+                    val time = Stats.clock(remaining ?: (now - active.start))
+                    Text(active.modeName.uppercase(), style = Type.caption, color = color)
+                    Text(time, style = Type.hero.copy(fontSize = if (time.length > 5) 52.sp else 72.sp), color = Color(0xFFF1F1EE))
+                    Text(if (remaining != null) "left" else "latched", style = Type.footnote, color = Color(0xFFF1F1EE).copy(alpha = 0.5f))
                 } else {
-                    Icon(Icons.Rounded.Nfc, null, tint = color, modifier = Modifier.size(40.dp))
+                    Icon(LatchGlyph, null, tint = color, modifier = Modifier.size(40.dp))
                     Spacer(Modifier.height(10.dp))
                     Text(modeName, style = Type.title.copy(fontSize = 26.sp), color = p.text, textAlign = TextAlign.Center, maxLines = 1)
                     Text(

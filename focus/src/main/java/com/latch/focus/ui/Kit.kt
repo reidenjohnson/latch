@@ -228,3 +228,6 @@ fun rememberOnResume(check: () -> Boolean): MutableState<Boolean> {
 fun goHome(context: Context) {
     context.startActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
 }
+
+/** "1 app", "12 apps". */
+fun apps(n: Int) = if (n == 1) "1 app" else "$n apps"

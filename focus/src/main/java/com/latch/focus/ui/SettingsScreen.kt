@@ -17,7 +17,6 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Alarm
 import androidx.compose.material.icons.rounded.Apps
-import androidx.compose.material.icons.rounded.Nfc
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.NotificationsOff
 import androidx.compose.material.icons.rounded.Shield
@@ -44,6 +43,16 @@ import com.latch.focus.data.LatchTag
 import com.latch.focus.data.ListType
 import com.latch.focus.data.Mode
 import com.latch.focus.engine.Alarms
+import com.latch.focus.engine.Prefs
+import com.latch.focus.engine.ThemeMode
+import com.latch.focus.data.Rules
+import com.latch.focus.latch
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material.icons.rounded.DeleteSweep
+import androidx.compose.material.icons.rounded.RestartAlt
+import androidx.compose.material.icons.rounded.Vibration
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import com.latch.focus.ui.theme.palette
 import java.text.DateFormat
 import java.util.Date
@@ -69,6 +78,9 @@ fun SettingsScreen(
     }
     val askNotif = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { notifOn.value = it }
     var tagMenu by remember { mutableStateOf<LatchTag?>(null) }
+    var confirm by remember { mutableStateOf<Confirm?>(null) }
+    val theme by Prefs.theme.collectAsState()
+    val haptics by Prefs.haptics.collectAsState()
 
     LazyColumn(
         Modifier.fillMaxSize(),
@@ -77,7 +89,7 @@ fun SettingsScreen(
     ) {
         item {
             IconButton(onClick = onBack, modifier = Modifier.padding(top = 4.dp)) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back", tint = p.text) }
-            LargeTitle("Settings", subtitle = if (locked) "Most settings are locked while a session runs." else null)
+            LargeTitle("Settings", subtitle = if (locked) "Most settings are locked while you're latched." else null)
         }
         item {
             Section("Modes", "Each mode is its own list of apps, with its own color and schedules.") {
@@ -90,17 +102,29 @@ fun SettingsScreen(
             }
         }
         item {
-            Section("Your Latches", "Any paired tag starts and ends sessions. Pairing the same tag on two phones is fine.") {
+            Section("Your Latches", "Any paired tag latches and unlatches this phone. The same tag can be paired on two phones.") {
                 state.tags.forEachIndexed { i, t ->
                     if (i > 0) RowDivider()
                     ListRow(
-                        t.name, icon = Icons.Rounded.Nfc, tint = p.teal,
+                        t.name, icon = LatchGlyph, tint = p.teal,
                         subtitle = "Paired ${DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(t.pairedAt))}",
                         chevron = true, enabled = !locked,
                     ) { tagMenu = t }
                 }
                 if (state.tags.isNotEmpty()) RowDivider()
                 ListRow("Pair a Latch", icon = Icons.Rounded.Add, tint = p.faint, titleColor = p.teal, enabled = !locked, onClick = onPair)
+            }
+        }
+        item {
+            Section("Appearance") {
+                Box(Modifier.padding(12.dp)) {
+                    Pills(ThemeMode.entries.map { it to it.label }, theme, p.teal) { Prefs.setTheme(context, it) }
+                }
+                RowDivider(16.dp)
+                ListRow(
+                    "Haptics", icon = Icons.Rounded.Vibration, tint = p.teal, subtitle = "A buzz when you latch, unlatch or pair.",
+                    trailing = { Switch(haptics, { Prefs.setHaptics(context, it) }, colors = SwitchDefaults.colors(checkedTrackColor = p.teal)) },
+                )
             }
         }
         item {
@@ -117,7 +141,7 @@ fun SettingsScreen(
                     context.startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:${context.packageName}")))
                 }
                 RowDivider()
-                ListRow("Session notification", icon = Icons.Rounded.Notifications, tint = p.amber, subtitle = "A quiet timer while a session runs.", value = if (notifOn.value) "On" else "Off", chevron = !notifOn.value) {
+                ListRow("Latched notification", icon = Icons.Rounded.Notifications, tint = p.amber, subtitle = "A quiet timer while you're latched.", value = if (notifOn.value) "On" else "Off", chevron = !notifOn.value) {
                     if (!notifOn.value && Build.VERSION.SDK_INT >= 33) askNotif.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
             }
@@ -130,9 +154,38 @@ fun SettingsScreen(
             ) {
                 ListRow(
                     "Emergency unlock", icon = Icons.Rounded.HealthAndSafety, tint = p.brick,
-                    subtitle = "Hold for $EMERGENCY_SECONDS seconds during a session to end it.",
+                    subtitle = "Hold for $EMERGENCY_SECONDS seconds to unlatch without your tag.",
                     value = "${state.emergencyUnlocks} used",
                 )
+            }
+        }
+        item {
+            Section("Data", if (locked) "Unlatch first to clear or reset." else "Everything lives on this phone only.") {
+                ListRow("Clear activity history", icon = Icons.Rounded.DeleteSweep, tint = p.amber, enabled = !locked && state.sessions.isNotEmpty()) {
+                    confirm = Confirm.ClearHistory
+                }
+                RowDivider()
+                ListRow(
+                    "Reset Latch", icon = Icons.Rounded.RestartAlt, tint = p.brick, titleColor = p.brick,
+                    subtitle = "Forget modes, paired tags and history, and start setup over.", enabled = !locked,
+                ) { confirm = Confirm.Reset }
+            }
+        }
+        item {
+            Section("Developer") {
+                ListRow("Version", value = versionName(context))
+                RowDivider(16.dp)
+                ListRow("Replay setup", subtitle = "Show the first-run screens again. Keeps your data.", chevron = true, enabled = !locked) {
+                    context.latch.replayOnboarding()
+                }
+                RowDivider(16.dp)
+                ListRow("Blocking service", value = if (blockerOn) "Connected" else "Not running")
+                RowDivider(16.dp)
+                ListRow("Next wake-up", value = nextWake(state))
+                RowDivider(16.dp)
+                ListRow("App info", subtitle = "Permissions, storage, restricted settings.", chevron = true) {
+                    context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")))
+                }
             }
         }
         item {
@@ -140,6 +193,29 @@ fun SettingsScreen(
                 ListRow("Latch", subtitle = "Free and open source. No account, no tracking, nothing leaves your phone.")
             }
         }
+    }
+
+    when (confirm) {
+        Confirm.ClearHistory -> AlertDialog(
+            onDismissRequest = { confirm = null },
+            title = { Text("Clear activity history?") },
+            text = { Text("Your past sessions and stats are deleted. Modes and tags stay.") },
+            confirmButton = { TextButton(onClick = { context.latch.clearHistory(); confirm = null }) { Text("Clear", color = p.brick) } },
+            dismissButton = { TextButton(onClick = { confirm = null }) { Text("Cancel") } },
+        )
+        Confirm.Reset -> AlertDialog(
+            onDismissRequest = { confirm = null },
+            title = { Text("Reset Latch?") },
+            text = {
+                Text(
+                    "This forgets every mode, paired tag and session on this phone, and takes you back to setup. " +
+                        "Your tags aren't changed, so you can pair them again. This can't be undone.",
+                )
+            },
+            confirmButton = { TextButton(onClick = { context.latch.resetAll(); confirm = null }) { Text("Reset", color = p.brick) } },
+            dismissButton = { TextButton(onClick = { confirm = null }) { Text("Cancel") } },
+        )
+        null -> Unit
     }
 
     tagMenu?.let { t ->
@@ -153,6 +229,16 @@ fun SettingsScreen(
         )
     }
 }
+
+private enum class Confirm { ClearHistory, Reset }
+
+private fun versionName(context: android.content.Context): String =
+    runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() ?: "?"
+
+private fun nextWake(s: AppState): String =
+    Rules.nextWake(s, System.currentTimeMillis())?.let {
+        DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(it))
+    } ?: "None"
 
 fun modeLine(m: Mode): String {
     val apps = when {

@@ -64,7 +64,16 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         adapter = NfcAdapter.getDefaultAdapter(this)
         pairUid = intent.getStringExtra(EXTRA_PAIR_UID)
-        setContent { LatchTheme { Root() } }
+        setContent {
+            // Status and nav bar icons follow the in-app theme, not only the phone's.
+            val dark = com.latch.focus.ui.theme.isDark()
+            androidx.compose.runtime.LaunchedEffect(dark) {
+                val t = android.graphics.Color.TRANSPARENT
+                val style = if (dark) androidx.activity.SystemBarStyle.dark(t) else androidx.activity.SystemBarStyle.light(t, t)
+                enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+            }
+            LatchTheme { Root() }
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -113,7 +122,7 @@ class MainActivity : ComponentActivity() {
             if (stamp == seenEvent) return@LaunchedEffect
             seenEvent = stamp
             screen = Screen.Home
-            if (c is Change.Ended) snackbar.showSnackbar("You stayed focused for ${Stats.format(c.session.length)}")
+            if (c is Change.Ended) snackbar.showSnackbar("Unlatched · you stayed off for ${Stats.format(c.session.length)}")
         }
         LaunchedEffect(note?.first) {
             val (stamp, n) = note ?: return@LaunchedEffect
@@ -192,7 +201,7 @@ class MainActivity : ComponentActivity() {
             AlertDialog(
                 onDismissRequest = { pairUid = null },
                 title = { Text("Use this Latch?") },
-                text = { Text("It will start and end sessions on this phone too. It keeps working for whoever else uses it.") },
+                text = { Text("Tapping it will latch and unlatch this phone too. It keeps working for whoever else uses it.") },
                 confirmButton = { TextButton(onClick = { engine.pair(uid); engine.finishOnboarding(); pairUid = null }) { Text("Pair") } },
                 dismissButton = { TextButton(onClick = { pairUid = null }) { Text("Not now") } },
             )

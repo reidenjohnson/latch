@@ -63,7 +63,7 @@ class TagReader(private val context: Context, private val engine: Engine) {
     }
 
     private fun pairTag(tag: Tag, uid: String): PairState {
-        if (engine.locked) return PairState.Failed("A session is running", "End it first, then pair a new Latch.")
+        if (engine.locked) return PairState.Failed("You're latched", "Unlatch first, then pair a new Latch.")
         return try {
             val locked = !write(tag)
             engine.pair(uid)
@@ -105,6 +105,7 @@ class TagReader(private val context: Context, private val engine: Engine) {
     }
 
     private fun buzz(ok: Boolean) = runCatching {
+        if (!com.latch.focus.engine.Prefs.haptics.value) return@runCatching
         val v = context.getSystemService(VibratorManager::class.java)?.defaultVibrator ?: return@runCatching
         v.vibrate(
             if (ok) VibrationEffect.createPredefined(VibrationEffect.EFFECT_DOUBLE_CLICK)

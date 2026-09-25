@@ -40,7 +40,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.LockOpen
-import androidx.compose.material.icons.rounded.Nfc
 import androidx.compose.material.icons.rounded.PriorityHigh
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Shield
@@ -114,9 +113,9 @@ private fun Hero(onStart: () -> Unit) {
         Text("Latch", style = Type.largeTitle.copy(fontSize = 52.sp, lineHeight = 56.sp, letterSpacing = (-2).sp), color = p.text)
         Text("Your phone, on your terms.", style = Type.title.copy(fontSize = 22.sp), color = p.dim)
         Spacer(Modifier.height(28.dp))
-        Feature(Icons.Rounded.Nfc, p.teal, "Tap to lock", "Tap your Latch tag and the apps that pull you in are locked.")
-        Feature(Icons.Rounded.LockOpen, p.fern, "Tap to unlock", "To get them back, walk over and tap it again.")
-        Feature(Icons.Rounded.Schedule, p.amber, "Runs on a schedule", "Lock automatically for work hours or bedtime, if you like.")
+        Feature(LatchGlyph, p.teal, "Tap to latch", "Tap your Latch and the apps that pull you in are locked.")
+        Feature(Icons.Rounded.LockOpen, p.fern, "Tap to unlatch", "To get them back, walk over and tap it again.")
+        Feature(Icons.Rounded.Schedule, p.amber, "Runs on a schedule", "Latch automatically for work hours or bedtime, if you like.")
         Feature(Icons.Rounded.HealthAndSafety, p.brick, "Always a way out", "Calls, Settings and an emergency unlock always work.")
         Spacer(Modifier.weight(1f))
         Spacer(Modifier.height(24.dp))
@@ -148,7 +147,7 @@ private fun HeroMark() {
             }
         }
         Box(Modifier.size(150.dp).clip(CircleShape).background(p.surface), contentAlignment = Alignment.Center) {
-            Icon(Icons.Rounded.Nfc, null, tint = p.text, modifier = Modifier.size(52.dp))
+            Icon(LatchGlyph, null, tint = p.text, modifier = Modifier.size(52.dp))
         }
     }
 }
@@ -248,7 +247,7 @@ fun PairVisual(pair: PairState) {
             }
             Box(Modifier.size(110.dp).clip(CircleShape).background(color), contentAlignment = Alignment.Center) {
                 Icon(
-                    when (pair) { is PairState.Paired -> Icons.Rounded.Check; is PairState.Failed -> Icons.Rounded.PriorityHigh; else -> Icons.Rounded.Nfc },
+                    when (pair) { is PairState.Paired -> Icons.Rounded.Check; is PairState.Failed -> Icons.Rounded.PriorityHigh; else -> LatchGlyph },
                     null, tint = Color.White, modifier = Modifier.size(48.dp),
                 )
             }

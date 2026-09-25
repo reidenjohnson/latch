@@ -98,7 +98,7 @@ fun ActivityScreen(state: AppState, onBack: () -> Unit) {
         } else {
             item {
                 Text(
-                    "Your sessions will show up here. Tap your Latch to start one.",
+                    "Your time off will show up here. Tap your Latch to start.",
                     style = Type.callout, color = p.faint, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(24.dp),
                 )
             }
