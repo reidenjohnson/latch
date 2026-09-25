@@ -29,6 +29,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.foundation.layout.offset
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameMillis
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.IntOffset
+import kotlin.random.Random
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -72,11 +80,35 @@ fun Puck(
     )
     val hold = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    // Hold-to-latch build-up, Little Big Planet style: the disc trembles harder and the haptic ticks come faster
+    // the longer you hold, then it pops with a thud and a shockwave ring.
+    var holding by remember { mutableStateOf(false) }
+    var jitter by remember { mutableStateOf(Offset.Zero) }
+    val pop = remember { Animatable(0f) }
+    LaunchedEffect(holding) {
+        if (!holding) { jitter = Offset.Zero; return@LaunchedEffect }
+        var lastTick = 0L
+        while (holding) {
+            withFrameMillis { t ->
+                val k = hold.value * hold.value // eases in: barely moving at first, shaking hard at the end
+                val amp = 7f * k
+                jitter = Offset((Random.nextFloat() * 2 - 1) * amp, (Random.nextFloat() * 2 - 1) * amp)
+                val gap = (320 - 270 * hold.value).toLong() // ticks speed up from ~3 a second to ~20
+                if (t - lastTick >= gap) { Buzz.tick(context, 0.15f + 0.85f * hold.value); lastTick = t }
+            }
+        }
+        jitter = Offset.Zero
+    }
 
     Box(modifier.size(diameter + 40.dp), contentAlignment = Alignment.Center) {
         // Halo: breathes while a session runs, a faint static ring when idle.
         Canvas(Modifier.size(diameter + 40.dp)) {
             val r = size.minDimension / 2
+            // The pop: a ring bursting outward and fading as the hold completes.
+            if (pop.value > 0f && pop.value < 1f) {
+                drawCircle(color.copy(alpha = 0.6f * (1 - pop.value)), radius = r * (0.8f + 0.5f * pop.value), style = Stroke((10 * (1 - pop.value) + 1).dp.toPx()))
+            }
             if (active != null) {
                 // Latched: a thin ring in the mode's hue that slowly breathes, like the lock screen.
                 drawCircle(color.copy(alpha = 0.3f + 0.35f * glow), radius = r - 2.dp.toPx(), style = Stroke(1.5.dp.toPx()))
@@ -89,19 +121,27 @@ fun Puck(
         else Brush.linearGradient(listOf(p.surface, p.surface))
         Box(
             Modifier.size(diameter)
-                .scale(1f - 0.03f * hold.value)
+                .offset { IntOffset(jitter.x.dp.roundToPx(), jitter.y.dp.roundToPx()) }
+                .scale(1f + 0.05f * hold.value * hold.value + 0.08f * (if (pop.value in 0.001f..0.999f) (1 - pop.value) else 0f))
                 .shadow(if (active != null) 20.dp else 12.dp, CircleShape, ambientColor = Color.Black, spotColor = Color.Black.copy(alpha = 0.35f))
                 .clip(CircleShape)
                 .background(fill)
                 .pointerInput(active == null) {
                     if (active != null) return@pointerInput
                     detectTapGestures(onPress = {
+                        holding = true
                         val run = scope.launch {
                             hold.animateTo(1f, tween(HOLD_TO_START_SECONDS * 1000, easing = LinearEasing))
+                            holding = false
+                            Buzz.thud(context)
                             onHoldStart()
                             hold.snapTo(0f)
+                            pop.snapTo(0f)
+                            pop.animateTo(1f, tween(650, easing = FastOutSlowInEasing))
+                            pop.snapTo(0f)
                         }
                         tryAwaitRelease()
+                        holding = false
                         if (hold.value < 1f) { run.cancel(); scope.launch { hold.animateTo(0f, tween(250)) } }
                     })
                 },
