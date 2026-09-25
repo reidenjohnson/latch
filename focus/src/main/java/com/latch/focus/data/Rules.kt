@@ -37,6 +37,22 @@ object Rules {
         return s.copy(active = null, sessions = (listOf(session) + s.sessions).take(MAX_SESSIONS), skips = skips) to Change.Ended(session)
     }
 
+    /** The earliest an "unlatch later" can be: an hour from now. No instant gratification. */
+    const val MIN_LATER_MS = 60 * 60_000L
+
+    /**
+     * Unlatch later: set the running session to end at [endsAt]. Only allowed at least [MIN_LATER_MS] from now, and
+     * only to make a session shorter (or give an open-ended one an end), never longer. Returns null if not allowed.
+     */
+    fun endLater(s: AppState, endsAt: Long, now: Long): AppState? {
+        val a = s.active ?: return null
+        if (endsAt < now + MIN_LATER_MS) return null
+        if (a.endsAt != null && endsAt >= a.endsAt) return null
+        // A shortened scheduled session mustn't restart when it ends: skip the rest of its window.
+        val skips = if (a.scheduleId != null && a.endsAt != null) s.skips + (a.scheduleId to a.endsAt) else s.skips
+        return s.copy(active = a.copy(endsAt = endsAt), skips = skips)
+    }
+
     /** A paired tag was tapped: end the session if one's running, otherwise start the selected mode. */
     fun tap(s: AppState, uid: String, now: Long, blockedFor: (Mode) -> Set<String>): Pair<AppState, Change?> {
         if (!s.isPaired(uid)) return s to Change.NotPaired

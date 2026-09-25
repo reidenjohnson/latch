@@ -54,7 +54,7 @@ import androidx.core.graphics.drawable.toBitmap
 import com.latch.focus.data.Hue
 import com.latch.focus.data.Stats
 import com.latch.focus.latch
-import com.latch.focus.ui.EmergencySheet
+import com.latch.focus.ui.WaysOutSheet
 import com.latch.focus.ui.GhostButton
 import com.latch.focus.ui.LatchGlyph
 import com.latch.focus.ui.Words
@@ -172,7 +172,7 @@ class BlockedActivity : ComponentActivity() {
                 }
                 Spacer(Modifier.height(20.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    GhostButton("Emergency", color = white.copy(alpha = 0.4f)) { emergency = true }
+                    GhostButton("Need out sooner?", color = white.copy(alpha = 0.45f)) { emergency = true }
                     GhostButton("Home", color = white.copy(alpha = 0.85f), onClick = ::leave)
                 }
             }
@@ -181,7 +181,7 @@ class BlockedActivity : ComponentActivity() {
             SnackbarHost(snackbar, Modifier.align(Alignment.TopCenter).safeDrawingPadding().padding(start = 16.dp, end = 16.dp, top = BANNER_TOP))
         }
         if (emergency) {
-            EmergencySheet(state.emergencyUnlocks, onDismiss = { emergency = false }) {
+            WaysOutSheet(state, onDismiss = { emergency = false }) {
                 emergency = false
                 latch.emergencyUnlock()
             }

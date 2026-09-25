@@ -9,6 +9,7 @@ import com.latch.focus.data.Json
 import com.latch.focus.data.LatchTag
 import com.latch.focus.data.ListType
 import com.latch.focus.data.Mode
+import com.latch.focus.data.Passcode
 import com.latch.focus.data.Rules
 import com.latch.focus.data.Trigger
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -70,6 +71,23 @@ class Engine(private val context: Context) {
     }
 
     fun emergencyUnlock(): Change? = apply { Rules.end(it, EndReason.Emergency, now()) }
+
+    /** Unlatch with the passcode instead of the tag. Returns false (and changes nothing) if it's wrong. */
+    fun unlockWithPasscode(code: String): Boolean {
+        if (!Passcode.matches(code, _state.value.passcode)) return false
+        apply { Rules.end(it, EndReason.Passcode, now()) }
+        return true
+    }
+
+    /** Unlatch later, at least an hour from now. Returns false if that isn't allowed (see [Rules.endLater]). */
+    fun endLater(endsAt: Long): Boolean {
+        var ok = false
+        apply { s -> val next = Rules.endLater(s, endsAt, now()); ok = next != null; (next ?: s) to null }
+        return ok
+    }
+
+    /** Set, change or remove (null) the passcode. Refused while latched, like other settings. */
+    fun setPasscode(code: String?) = edit { it.copy(passcode = code?.let(Passcode::hash)) }
 
     fun tick(): Change? = apply { Rules.tick(it, now(), blockedFor) }
 

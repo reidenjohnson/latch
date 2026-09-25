@@ -170,7 +170,7 @@ private fun SessionRow(s: Session) {
     val t = DateFormat.getTimeInstance(DateFormat.SHORT)
     val how = buildList {
         when (s.trigger) { Trigger.Schedule -> add("Scheduled"); Trigger.Hold -> add("Started without tag"); Trigger.Tag -> Unit }
-        when (s.endReason) { EndReason.Emergency -> add("Emergency unlock"); EndReason.Timer -> add("Timer"); else -> Unit }
+        when (s.endReason) { EndReason.Emergency -> add("Emergency unlock"); EndReason.Passcode -> add("Passcode"); EndReason.Timer -> add("Timer"); else -> Unit }
         if (s.hidden > 0) add("${s.hidden} notifications held")
     }
     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {

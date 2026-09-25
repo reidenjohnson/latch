@@ -76,7 +76,7 @@ data class Mode(
 data class LatchTag(val uid: String, val name: String, val pairedAt: Long)
 
 enum class Trigger { Tag, Hold, Schedule }
-enum class EndReason { Tag, Timer, Schedule, Emergency }
+enum class EndReason { Tag, Timer, Schedule, Emergency, Passcode }
 
 /** A running session. The mode is copied in, so editing modes can't change a session that's already going. */
 data class Active(
@@ -117,6 +117,8 @@ data class AppState(
     val sessions: List<Session> = emptyList(),
     /** Schedule windows the user ended early, by schedule id → window end. They don't restart until then. */
     val skips: Map<String, Long> = emptyMap(),
+    /** Optional unlock passcode, as a salted hash (see [Passcode]). Null = none set. */
+    val passcode: String? = null,
 ) {
     fun isPaired(uid: String) = tags.any { it.uid == uid }
     val selectedMode: Mode? get() = modes.firstOrNull { it.id == selectedModeId } ?: modes.firstOrNull()

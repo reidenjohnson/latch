@@ -45,6 +45,16 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.latch.focus.data.AppState
+import com.latch.focus.data.Passcode
+import com.latch.focus.data.Rules
+import com.latch.focus.latch
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import com.latch.focus.data.ListType
 import com.latch.focus.ui.theme.Type
 import com.latch.focus.ui.theme.palette
@@ -145,12 +155,12 @@ fun HomeScreen(
             Spacer(Modifier.height(24.dp))
         } else {
             Box(Modifier.fillMaxWidth().padding(bottom = 16.dp), contentAlignment = Alignment.Center) {
-                GhostButton("Emergency unlock", color = p.brick) { emergency = true }
+                GhostButton("Need out sooner?", color = p.dim) { emergency = true }
             }
         }
     }
 
-    if (emergency) EmergencySheet(state.emergencyUnlocks, onDismiss = { emergency = false }) { emergency = false; onEmergency() }
+    if (emergency) WaysOutSheet(state, onDismiss = { emergency = false }) { emergency = false; onEmergency() }
 }
 
 private fun modeSummary(s: AppState): String {
@@ -193,30 +203,83 @@ private fun Notice(icon: ImageVector, color: androidx.compose.ui.graphics.Color,
     }
 }
 
+/**
+ * "Need out sooner?": every way out of a session besides the tag, from gentlest to bluntest.
+ * 1. Unlatch later: pick an end time, at least an hour away (no instant gratification).
+ * 2. Passcode, if one is set in Settings (for a partner or parent to let someone out).
+ * 3. The emergency hold, always available (safety rule).
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EmergencySheet(used: Int, onDismiss: () -> Unit, onUnlock: () -> Unit) {
+fun WaysOutSheet(state: AppState, onDismiss: () -> Unit, onEmergency: () -> Unit) {
     val p = palette
+    val context = LocalContext.current
+    val active = state.active ?: return
+    val now = System.currentTimeMillis()
+    val time = DateFormat.getTimeInstance(DateFormat.SHORT)
+    // Only offer end times that are at least an hour out and sooner than the current end.
+    val later = listOf(1, 2, 4).map { now + it * 3_600_000L }.filter { Rules.endLater(state, it, now) != null }
+    var code by remember { mutableStateOf("") }
+    var wrong by remember { mutableStateOf(false) }
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = p.bg) {
-        Column(Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, bottom = 32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            IconTile(Icons.Rounded.HealthAndSafety, p.brick, 52.dp)
-            Spacer(Modifier.height(16.dp))
-            Text("Emergency unlock", style = Type.title, color = p.text)
-            Spacer(Modifier.height(6.dp))
+        Column(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 28.dp)) {
+            Text("Need out sooner?", style = Type.title, color = p.text)
+            Spacer(Modifier.height(4.dp))
             Text(
-                "Lost your Latch, or really need your apps? Hold the button for $EMERGENCY_SECONDS seconds to unlatch. " +
-                    "Calls, Settings and emergency apps are never blocked, so you don't need this to reach help.",
-                style = Type.callout, color = p.dim, textAlign = TextAlign.Center,
+                "Calls, Settings and emergency apps are never locked, so you can always reach help.",
+                style = Type.callout, color = p.dim,
             )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                if (used == 0) "You haven't used it yet." else "You've used it $used time${if (used == 1) "" else "s"}.",
-                style = Type.footnote, color = p.faint,
-            )
-            Spacer(Modifier.height(24.dp))
-            HoldBar("Hold to unlock", "Keep holding…", EMERGENCY_SECONDS, p.brick, onDone = onUnlock)
-            Spacer(Modifier.height(8.dp))
-            GhostButton("Never mind", onClick = onDismiss)
+            Spacer(Modifier.height(20.dp))
+
+            Section(
+                "Unlatch later",
+                if (later.isEmpty()) "It already unlatches within the hour." else "The earliest is an hour from now.",
+            ) {
+                later.forEachIndexed { i, at ->
+                    if (i > 0) RowDivider()
+                    val hours = (at - now + 60_000) / 3_600_000
+                    ListRow(
+                        "In $hours hour${if (hours == 1L) "" else "s"}", icon = Icons.Rounded.Schedule, tint = p.amber,
+                        value = time.format(Date(at)),
+                    ) { if (context.latch.endLater(at)) onDismiss() }
+                }
+                if (later.isEmpty()) {
+                    ListRow("Unlatches at ${active.endsAt?.let { time.format(Date(it)) } ?: "—"}", icon = Icons.Rounded.Schedule, tint = p.amber)
+                }
+            }
+
+            if (state.passcode != null) {
+                Spacer(Modifier.height(20.dp))
+                Section("Passcode", if (wrong) "That's not it. Try again." else "Whoever set the passcode can unlatch this phone.") {
+                    Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            code, { code = it.filter(Char::isDigit).take(Passcode.MAX_LENGTH); wrong = false },
+                            singleLine = true, placeholder = { Text("Passcode") }, isError = wrong,
+                            visualTransformation = PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                            modifier = Modifier.weight(1f),
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        TextButton(enabled = code.length >= Passcode.MIN_LENGTH, onClick = {
+                            if (context.latch.unlockWithPasscode(code)) onDismiss() else { wrong = true; code = "" }
+                        }) { Text("Unlock") }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(20.dp))
+            Section(
+                "Emergency",
+                "Hold for $EMERGENCY_SECONDS seconds. " + when (state.emergencyUnlocks) {
+                    0 -> "You haven't used it yet."
+                    1 -> "You've used it once."
+                    else -> "You've used it ${state.emergencyUnlocks} times."
+                },
+            ) {
+                Box(Modifier.padding(12.dp)) {
+                    HoldBar("Hold to unlatch now", "Keep holding…", EMERGENCY_SECONDS, p.brick, onDone = onEmergency)
+                }
+            }
         }
     }
 }

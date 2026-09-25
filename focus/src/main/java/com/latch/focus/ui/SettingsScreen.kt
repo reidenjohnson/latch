@@ -44,6 +44,13 @@ import com.latch.focus.data.ListType
 import com.latch.focus.data.Mode
 import com.latch.focus.engine.Alarms
 import com.latch.focus.engine.Prefs
+import com.latch.focus.data.Passcode
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.rounded.Password
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import com.latch.focus.engine.ThemeMode
 import com.latch.focus.data.Rules
 import com.latch.focus.latch
@@ -78,6 +85,7 @@ fun SettingsScreen(
     val askNotif = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { notifOn.value = it }
     var tagMenu by remember { mutableStateOf<LatchTag?>(null) }
     var confirm by remember { mutableStateOf<Confirm?>(null) }
+    var passcodeDialog by remember { mutableStateOf(false) }
     val theme by Prefs.theme.collectAsState()
     val haptics by Prefs.haptics.collectAsState()
 
@@ -148,6 +156,12 @@ fun SettingsScreen(
                     "Uninstalling Latch removes every restriction.",
             ) {
                 ListRow(
+                    "Passcode", icon = Icons.Rounded.Password, tint = p.teal,
+                    subtitle = "Lets you unlatch this phone without the tag. Handy for a kid, or if a tag goes missing.",
+                    value = if (state.passcode != null) "On" else "Off", chevron = true, enabled = !locked,
+                ) { passcodeDialog = true }
+                RowDivider()
+                ListRow(
                     "Emergency unlock", icon = Icons.Rounded.HealthAndSafety, tint = p.brick,
                     subtitle = "Hold for $EMERGENCY_SECONDS seconds to unlatch without your tag.",
                     value = "${state.emergencyUnlocks} used",
@@ -190,6 +204,11 @@ fun SettingsScreen(
         }
     }
 
+    if (passcodeDialog) PasscodeDialog(hasOne = state.passcode != null, onDismiss = { passcodeDialog = false }) { code ->
+        context.latch.setPasscode(code)
+        passcodeDialog = false
+    }
+
     when (confirm) {
         Confirm.ClearHistory -> AlertDialog(
             onDismissRequest = { confirm = null },
@@ -226,6 +245,43 @@ fun SettingsScreen(
 }
 
 private enum class Confirm { ClearHistory, Reset }
+
+/** Set a new passcode (typed twice), or remove the current one. [onSave] gets null to remove it. */
+@Composable
+private fun PasscodeDialog(hasOne: Boolean, onDismiss: () -> Unit, onSave: (String?) -> Unit) {
+    var first by remember { mutableStateOf("") }
+    var second by remember { mutableStateOf("") }
+    val digits = { v: String -> v.filter(Char::isDigit).take(Passcode.MAX_LENGTH) }
+    val mismatch = second.isNotEmpty() && second.length >= first.length && second != first
+    val field = @Composable { value: String, label: String, onChange: (String) -> Unit ->
+        OutlinedTextField(
+            value, { onChange(digits(it)) }, singleLine = true, label = { Text(label) },
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+        )
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(if (hasOne) "Change passcode" else "Set a passcode") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("${Passcode.MIN_LENGTH} to ${Passcode.MAX_LENGTH} digits. Anyone who knows it can unlatch this phone, so keep it to yourself.")
+                field(first, "New passcode") { first = it }
+                field(second, "Type it again") { second = it }
+                if (mismatch) Text("Those don't match.", color = palette.brick)
+            }
+        },
+        confirmButton = {
+            TextButton(enabled = Passcode.isValid(first) && first == second, onClick = { onSave(first) }) { Text("Save") }
+        },
+        dismissButton = {
+            Row {
+                if (hasOne) TextButton(onClick = { onSave(null) }) { Text("Remove", color = palette.brick) }
+                TextButton(onClick = onDismiss) { Text("Cancel") }
+            }
+        },
+    )
+}
 
 private fun versionName(context: android.content.Context): String =
     runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() ?: "?"

@@ -16,6 +16,7 @@ object Json {
         .put("active", s.active?.let(::active) ?: JSONObject.NULL)
         .put("sessions", arr(s.sessions, ::session))
         .put("skips", JSONObject(s.skips.mapValues { it.value }))
+        .put("passcode", s.passcode ?: JSONObject.NULL)
         .toString()
 
     fun read(text: String): AppState {
@@ -29,6 +30,7 @@ object Json {
             active = o.optJSONObject("active")?.let(::active),
             sessions = list(o.optJSONArray("sessions"), ::session),
             skips = o.optJSONObject("skips")?.let { sk -> sk.keys().asSequence().associateWith { sk.getLong(it) } }.orEmpty(),
+            passcode = o.optStringOrNull("passcode"),
         )
     }
 

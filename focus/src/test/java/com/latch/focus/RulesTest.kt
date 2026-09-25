@@ -94,6 +94,35 @@ class RulesTest {
         assertEquals(at(2026, 9, 21, 17), Rules.nextWake(base, monday9 + 1000, zone))
     }
 
+    @Test fun endLaterIsAtLeastAnHourAndOnlyShorter() {
+        val h = 3_600_000L
+        val (open, _) = Rules.tap(base, "AA", 0, block) // no end time
+        assertNull(Rules.endLater(open, 59 * 60_000L, 0)) // under an hour: no
+        assertEquals(h, Rules.endLater(open, h, 0)!!.active!!.endsAt)
+        val (timed, _) = Rules.tap(base.copy(timerMinutes = 120), "AA", 0, block) // ends at 2h
+        assertNull(Rules.endLater(timed, 3 * h, 0)) // can't make it longer
+        assertEquals(h, Rules.endLater(timed, h, 0)!!.active!!.endsAt)
+        assertNull(Rules.endLater(base, h, 0)) // nothing running
+    }
+
+    @Test fun shortenedScheduleDoesNotRestart() {
+        val (s1, _) = Rules.tick(base, monday9, block, zone) // scheduled 9–17
+        val s2 = Rules.endLater(s1, monday9 + 3_600_000L, monday9)!!
+        val (s3, c) = Rules.tick(s2, monday9 + 3_600_000L + 1000, block, zone)
+        assertTrue(c is Change.Ended)
+        assertNull(s3.active)
+    }
+
+    @Test fun passcodeHashesAndMatches() {
+        val stored = com.latch.focus.data.Passcode.hash("2468")
+        assertTrue(!stored.contains("2468"))
+        assertTrue(com.latch.focus.data.Passcode.matches("2468", stored))
+        assertTrue(!com.latch.focus.data.Passcode.matches("2469", stored))
+        assertTrue(!com.latch.focus.data.Passcode.matches("2468", null))
+        assertTrue(!com.latch.focus.data.Passcode.isValid("12"))
+        assertTrue(com.latch.focus.data.Passcode.isValid("123456"))
+    }
+
     @Test fun statsClipToRanges() {
         val (s1, _) = Rules.tap(base, "AA", 0, block)
         val (s2, _) = Rules.tap(s1, "AA", 2 * 3_600_000L, block)
