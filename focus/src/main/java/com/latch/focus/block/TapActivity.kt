@@ -19,7 +19,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -113,10 +113,10 @@ class TapActivity : ComponentActivity() {
         }
         Box(
             Modifier.fillMaxSize().clickable(remember { MutableInteractionSource() }, indication = null) { finish() },
-            contentAlignment = Alignment.BottomCenter,
+            contentAlignment = Alignment.TopCenter,
         ) {
             Column(
-                Modifier.navigationBarsPadding().padding(12.dp).fillMaxWidth().scale(scale)
+                Modifier.statusBarsPadding().padding(start = 12.dp, end = 12.dp, top = com.latch.focus.ui.BANNER_TOP).fillMaxWidth().scale(scale)
                     .clip(RoundedCornerShape(28.dp)).background(p.bg).padding(22.dp),
             ) {
                 when (c) {

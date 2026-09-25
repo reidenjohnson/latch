@@ -60,6 +60,7 @@ import com.latch.focus.ui.LatchGlyph
 import com.latch.focus.ui.Words
 import com.latch.focus.ui.rememberWord
 import com.latch.focus.ui.apps
+import com.latch.focus.ui.BANNER_TOP
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -172,12 +173,12 @@ class BlockedActivity : ComponentActivity() {
                     GhostButton("Home", color = white.copy(alpha = 0.85f), onClick = ::leave)
                 }
             }
-            // The "just latched" confirmation, at the bottom where the other confirmations live.
+            // The "just latched" confirmation, in the upper part of the screen like the app's other confirmations.
             AnimatedVisibility(
                 visible = justLatched && active != null,
-                enter = slideInVertically { it } + fadeIn(),
-                exit = slideOutVertically { it } + fadeOut(),
-                modifier = Modifier.align(Alignment.BottomCenter).safeDrawingPadding().padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                enter = slideInVertically { -it } + fadeIn(),
+                exit = slideOutVertically { -it } + fadeOut(),
+                modifier = Modifier.align(Alignment.TopCenter).safeDrawingPadding().padding(start = 16.dp, end = 16.dp, top = BANNER_TOP),
             ) {
                 Row(
                     Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color(0xFF232624)).padding(18.dp),

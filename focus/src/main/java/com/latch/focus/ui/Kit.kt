@@ -233,3 +233,6 @@ fun goHome(context: Context) {
 
 /** "1 app", "12 apps". */
 fun apps(n: Int) = if (n == 1) "1 app" else "$n apps"
+
+/** Where confirmations sit: in the upper quarter of the screen, below the status bar and top buttons. */
+val BANNER_TOP = 110.dp

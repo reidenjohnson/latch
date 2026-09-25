@@ -184,7 +184,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
-                SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(16.dp))
+                SnackbarHost(snackbar, Modifier.align(Alignment.TopCenter).padding(start = 16.dp, end = 16.dp, top = com.latch.focus.ui.BANNER_TOP))
             }
         }
 
