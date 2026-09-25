@@ -122,7 +122,11 @@ class MainActivity : ComponentActivity() {
             if (stamp == seenEvent) return@LaunchedEffect
             seenEvent = stamp
             screen = Screen.Home
-            if (c is Change.Ended) snackbar.showSnackbar("Unlatched · you stayed off for ${Stats.format(c.session.length)}")
+            when (c) {
+                is Change.Started -> snackbar.showSnackbar("${com.latch.focus.ui.Words.pick(com.latch.focus.ui.Words.state)} · ${com.latch.focus.ui.apps(c.active.blocked.size)} locked")
+                is Change.Ended -> snackbar.showSnackbar("Unlatched · you stayed off for ${Stats.format(c.session.length)}")
+                else -> Unit
+            }
         }
         LaunchedEffect(note?.first) {
             val (stamp, n) = note ?: return@LaunchedEffect

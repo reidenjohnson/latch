@@ -109,7 +109,7 @@ class TapActivity : ComponentActivity() {
         val quick = c is Change.Started || c is Change.Ended
         LaunchedEffect(c) {
             shown = true
-            if (quick) { delay(1900); finish() }
+            if (quick) { delay(2800); finish() }
         }
         Box(
             Modifier.fillMaxSize().clickable(remember { MutableInteractionSource() }, indication = null) { finish() },
@@ -120,7 +120,7 @@ class TapActivity : ComponentActivity() {
                     .clip(RoundedCornerShape(28.dp)).background(p.bg).padding(22.dp),
             ) {
                 when (c) {
-                    is Change.Started -> Header(Icons.Rounded.Check, p.solid(c.active.hue), Words.pick(Words.state),
+                    is Change.Started -> Header(Icons.Rounded.Check, p.solid(c.active.hue), rememberWord(Words.state, c),
                         "${c.active.modeName} · ${apps(c.active.blocked.size)} locked. Tap again to unlatch.")
                     is Change.Ended -> Header(Icons.Rounded.LockOpen, p.solid(Hue.Fern), "Unlatched",
                         "You stayed off for ${Stats.format(c.session.length)}." +
