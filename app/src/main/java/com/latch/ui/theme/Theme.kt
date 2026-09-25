@@ -1,7 +1,8 @@
 package com.latch.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
+
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
@@ -193,13 +194,13 @@ private val LatchShapes = Shapes(
 
 @Composable
 fun LatchTheme(content: @Composable () -> Unit) {
-    val dark = isSystemInDarkTheme()
+    val dark = isDark()
     CompositionLocalProvider(LocalExtras provides if (dark) DarkExtras else LightExtras) {
-        MaterialTheme(
-            colorScheme = if (dark) Dark else Light,
-            typography = LatchType,
-            shapes = LatchShapes,
-            content = content,
-        )
+        val scheme = if (dark) Dark else Light
+        MaterialTheme(colorScheme = scheme, typography = LatchType, shapes = LatchShapes) {
+            // Screens sit on a transparent Scaffold (so the wash shows through), which leaves the default content
+            // color at Compose's built-in black. Text without an explicit color then vanished in dark mode.
+            CompositionLocalProvider(LocalContentColor provides scheme.onBackground, content = content)
+        }
     }
 }

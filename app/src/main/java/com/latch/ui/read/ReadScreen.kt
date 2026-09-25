@@ -196,7 +196,7 @@ private fun ReadHome(
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        item { ScreenHeader("Latch", "Read, write and protect NFC tags", overline = "Ready", accent = Accent.teal) }
+        item { ScreenHeader("Latch Tags", "Read, write and protect NFC tags", overline = "Ready", accent = Accent.teal) }
         problem?.let { p -> item { ProblemCard(p) } }
         item {
             GradientPanel(x.tealGradient, Modifier.fillMaxWidth()) {

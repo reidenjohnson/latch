@@ -18,6 +18,7 @@ class LatchApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        com.latch.ui.theme.ThemePrefs.load(this)
         history = HistoryStore(this)
         templates = TemplateStore(this)
         nfc = NfcController(this, history)

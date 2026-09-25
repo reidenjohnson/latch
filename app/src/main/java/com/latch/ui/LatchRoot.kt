@@ -14,6 +14,15 @@ import androidx.compose.material.icons.rounded.EditNote
 import androidx.compose.material.icons.rounded.Handyman
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Nfc
+import androidx.compose.material.icons.rounded.BrightnessAuto
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.DarkMode
+import androidx.compose.material.icons.rounded.LightMode
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.IconButton
+import com.latch.ui.theme.ThemeMode
+import com.latch.ui.theme.ThemePrefs
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -88,6 +97,7 @@ fun LatchRoot(app: LatchApplication) {
     Scaffold(
         modifier = Modifier.background(screenWash()),
         containerColor = Color.Transparent,
+        contentColor = MaterialTheme.colorScheme.onBackground,
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
             NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
@@ -123,12 +133,42 @@ fun LatchRoot(app: LatchApplication) {
                     Tab.Tools -> ToolsScreen(nfc)
                     Tab.History -> HistoryScreen(app.history, nfc)
                 }
+                ThemeToggle(Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 12.dp))
             }
         }
     }
 
     if (sheet !is SheetState.Hidden) {
         ScanSheet(sheet, onDismiss = nfc::dismiss, onPassword = nfc::providePassword, onFinish = nfc::finish)
+    }
+}
+
+/** Top-right on every tab: pick light, dark, or follow the phone. The icon shows the current choice. */
+@Composable
+private fun ThemeToggle(modifier: Modifier) {
+    val context = LocalContext.current
+    val mode by ThemePrefs.mode.collectAsState()
+    var open by remember { mutableStateOf(false) }
+    Box(modifier) {
+        IconButton(onClick = { open = true }) {
+            Icon(
+                when (mode) {
+                    ThemeMode.System -> Icons.Rounded.BrightnessAuto
+                    ThemeMode.Light -> Icons.Rounded.LightMode
+                    ThemeMode.Dark -> Icons.Rounded.DarkMode
+                },
+                contentDescription = "Theme: ${mode.label}", tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            ThemeMode.entries.forEach { m ->
+                DropdownMenuItem(
+                    text = { Text(m.label) },
+                    onClick = { ThemePrefs.set(context, m); open = false },
+                    trailingIcon = { if (m == mode) Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                )
+            }
+        }
     }
 }
 

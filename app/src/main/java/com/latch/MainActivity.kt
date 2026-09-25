@@ -9,6 +9,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.SystemBarStyle
+import android.graphics.Color
+import androidx.compose.runtime.LaunchedEffect
+import com.latch.ui.theme.isDark
 import androidx.core.content.ContextCompat
 import com.latch.nfc.NfcAvailability
 import com.latch.ui.LatchRoot
@@ -31,6 +35,13 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         adapter = NfcAdapter.getDefaultAdapter(this)
         setContent {
+            // Status and nav bar icons follow the in-app theme choice, not just the phone's setting.
+            val dark = isDark()
+            LaunchedEffect(dark) {
+                val style = if (dark) SystemBarStyle.dark(Color.TRANSPARENT)
+                else SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+                enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+            }
             LatchTheme { LatchRoot(latch) }
         }
     }
