@@ -1,11 +1,35 @@
 # Latch
 
-A clean, fast NFC tag reader and writer for Android, with every feature free.
+Two free Android apps built around NFC tags.
 
-Most NFC apps on the Play Store bury simple actions behind subscriptions and cluttered screens. Latch keeps
+- **Latch** is a tap-to-focus app blocker, a free take on the Brick idea. Stick a cheap NFC tag somewhere you
+  have to walk to. Tap it to lock the apps that pull you in, and tap it again to get them back.
+- **Latch Tags** is a clean NFC reader and writer with every feature free.
+
+## Latch
+
+- **Tap to lock, tap to unlock.** Any NFC sticker, card or key fob becomes your Latch. Taps work with the app
+  closed. Someone else's phone that taps your Latch isn't locked: it explains what the tag is and offers to pair.
+- **Modes.** Up to 10 modes (Work, Sleep, Family…), each with its own color, app list and schedules. Block the
+  chosen apps, or allow only the chosen apps and block the rest.
+- **Suggested apps.** Setup pre-checks social, video and game apps (by Android app category plus a short list
+  of well-known apps), then shows every app below.
+- **Schedules and timers.** Modes can start and end on their own at set times. Manual sessions can end after
+  30 minutes to 4 hours, or only when you tap.
+- **Start without your tag.** Press and hold the on-screen Latch for 5 seconds.
+- **Hide notifications.** Optionally clears notifications from blocked apps during a session and counts them.
+- **Activity.** Today, this week, this month and all time, a streak, average and longest sessions, and a
+  7-day chart colored by mode.
+- **Safe by design.** Phone, Settings, the home screen, keyboards and emergency apps are never blocked. A
+  10-second hold always unlocks in an emergency (and it's counted, not limited). There's no root, no device
+  admin and no system changes, and uninstalling removes every restriction.
+- **Private.** Blocking uses an Accessibility service that only receives "which app opened" events and can't
+  read screen content (`canRetrieveWindowContent="false"`). There's no account, and nothing leaves the phone.
+
+## Latch Tags
+
+Most NFC apps on the Play Store bury simple actions behind subscriptions and cluttered screens. Latch Tags keeps
 it simple, speaks plain English, and checks every write so you know the tag actually worked.
-
-## Features
 
 **Read.** Tap any tag to see what's on it, in words, not hex: websites, Wi-Fi logins, contacts, phone
 numbers, map locations and app links. It also shows the exact chip (NTAG213/215/216), how much memory is
@@ -44,7 +68,7 @@ Shows password status, the live scan count, ATQA/SAK and each record's raw bytes
 
 **History.** Everything you read or write is saved and can be exported as CSV or written again.
 
-## Reliability
+### Reliability
 
 - **Reader mode.** While Latch is open, every tap goes straight to Latch instead of the system's "open with"
   dispatcher, so taps behave the same way every time.
@@ -59,33 +83,23 @@ Shows password status, the live scan count, ATQA/SAK and each record's raw bytes
   ([source](https://android.googlesource.com/platform/packages/modules/Nfc/+/refs/heads/main/NfcNci/src/com/android/nfc/NfcWifiProtectedSetup.java)),
   including attribute order for older Android versions.
 
-## Focus
-
-A free take on the Brick idea: pair an NFC tag, choose the apps that eat your time, and leave the tag somewhere
-you have to walk to. Tap it to start Focus. Blocked apps are covered with a "You're in Focus" screen until you
-tap the tag again, and Latch shows how long you stayed off.
-
-- **Works with Latch closed.** A Focus tag carries a Latch external record plus an Android Application Record,
-  so a tap from anywhere toggles Focus.
-- **Block these, or allow only these.** Block a short list, or block everything except a short list.
-- **Stats.** Time in Focus today and this week, your longest session, and recent sessions.
-- **Safe by design.** The phone app, Settings, the home screen, keyboards, emergency apps and Latch itself are
-  never blocked. A 10-second hold always unlocks in an emergency. There's no root, no device admin and no
-  system changes, and uninstalling Latch undoes everything.
-- **Private.** Blocking uses an Accessibility service that only listens for "which app opened". It can't read
-  screen content (`canRetrieveWindowContent="false"`), and nothing leaves the phone.
-
 ## Tech
 
 Kotlin · Jetpack Compose · Material 3 · Android NFC (`NfcAdapter` reader mode, `Ndef`, `NdefFormatable`, `NfcA`).
 No third-party dependencies beyond AndroidX. Min SDK 30 (Android 11).
 
 ```
-app/src/main/java/com/latch/
+focus/  Latch (com.latch)
+  data/    model, pure rules (sessions, schedules, timers), stats, JSON storage
+  engine/  state owner, alarms, notification, never-blocked essentials
+  block/   Accessibility blocker, notification silencer, block screen, tag-tap card
+  nfc/     pairing and in-app taps (reader mode)
+  ui/      Compose screens and the design system
+
+app/  Latch Tags (com.latch.tags)
   nfc/      NFC logic, no UI: controller, tag I/O, NDEF parser, payload builders
-  focus/    Focus: session state, blocker (Accessibility service), block screen, tag-tap handler
   data/     history store
-  ui/       Compose screens (read, write, focus, tools, history), components, theme
+  ui/       Compose screens (read, write, tools, history), components, theme
 ```
 
 ## Build
@@ -93,6 +107,6 @@ app/src/main/java/com/latch/
 Requires JDK 17+ and the Android SDK (compileSdk 37).
 
 ```
-./gradlew :app:testDebugUnitTest   # unit tests
-./gradlew :app:assembleDebug       # debug APK
+./gradlew testDebugUnitTest                         # unit tests, both apps
+./gradlew :focus:assembleDebug :app:assembleDebug   # Latch, Latch Tags
 ```

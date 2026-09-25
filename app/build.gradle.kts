@@ -10,7 +10,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.latch"
+        applicationId = "com.latch.tags"
         minSdk = 30
         targetSdk = 37
         versionCode = 1

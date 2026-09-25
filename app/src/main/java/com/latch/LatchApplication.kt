@@ -5,7 +5,6 @@ import android.content.Context
 import com.latch.data.DraftHandoff
 import com.latch.data.HistoryStore
 import com.latch.data.TemplateStore
-import com.latch.focus.FocusManager
 import com.latch.nfc.NfcController
 
 class LatchApplication : Application() {
@@ -15,16 +14,13 @@ class LatchApplication : Application() {
         private set
     lateinit var nfc: NfcController
         private set
-    lateinit var focus: FocusManager
-        private set
     val handoff = DraftHandoff()
 
     override fun onCreate() {
         super.onCreate()
         history = HistoryStore(this)
         templates = TemplateStore(this)
-        focus = FocusManager(this)
-        nfc = NfcController(this, history, focus)
+        nfc = NfcController(this, history)
     }
 }
 

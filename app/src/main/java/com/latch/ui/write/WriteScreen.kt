@@ -84,8 +84,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.graphics.drawable.toBitmap
-import com.latch.ui.components.loadApps
-import com.latch.ui.components.AppInfo
 import com.latch.data.Csv
 import com.latch.data.DraftHandoff
 import com.latch.data.Template
@@ -702,6 +700,8 @@ private fun BatchSetup(draft: List<RecordSpec>, nfc: NfcController, onBack: () -
 
 // ---------------------------------------------------------------- App picker
 
+private data class AppInfo(val label: String, val pkg: String, val icon: ImageBitmap?)
+
 @Composable
 private fun AppPicker(onDismiss: () -> Unit, onPick: (String, String) -> Unit) {
     val context = LocalContext.current
@@ -748,3 +748,15 @@ private fun AppPicker(onDismiss: () -> Unit, onPick: (String, String) -> Unit) {
     }
 }
 
+private fun loadApps(context: Context): List<AppInfo> {
+    val pm = context.packageManager
+    val launcher = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+    return pm.queryIntentActivities(launcher, 0)
+        .map { it.activityInfo.packageName to it }
+        .distinctBy { it.first }
+        .filter { it.first != context.packageName }
+        .map { (pkg, ri) ->
+            AppInfo(ri.loadLabel(pm).toString(), pkg, runCatching { ri.loadIcon(pm).toBitmap(96, 96).asImageBitmap() }.getOrNull())
+        }
+        .sortedBy { it.label.lowercase() }
+}

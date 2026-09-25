@@ -1,0 +1,16 @@
+<resources>
+    <!-- Window theme only (the background before Compose draws). The real design system is ui/theme/Theme.kt. -->
+    <style name="Theme.Latch" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/window</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+
+    <!-- The tap card floats over whatever app was open. -->
+    <style name="Theme.Latch.Translucent" parent="Theme.Latch">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:backgroundDimAmount">0.3</item>
+    </style>
+</resources>

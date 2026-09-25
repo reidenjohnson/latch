@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Status bar icon: the Latch disc and ring, in white (Android tints it). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#00000000" android:strokeColor="#FFFFFFFF" android:strokeWidth="1.8"
+        android:pathData="M2.9,12 A9.1,9.1 0 1,1 21.1,12 A9.1,9.1 0 1,1 2.9,12 Z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M6.5,12 A5.5,5.5 0 1,1 17.5,12 A5.5,5.5 0 1,1 6.5,12 Z" />
+</vector>

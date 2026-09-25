@@ -1,7 +1,3 @@
 <resources>
-    <string name="app_name">Latch</string>
-    <string name="focus_blocker_label">Latch Focus</string>
-    <string name="focus_silencer_label">Latch Focus</string>
-    <string name="focus_blocker_summary">Covers the apps you chose while Focus is on</string>
-    <string name="focus_blocker_description">While Focus is on, Latch covers the apps you chose to block until you tap your Latch tag. Latch only checks which app just opened. It never reads what\'s on your screen or what you type, and nothing leaves your phone.</string>
+    <string name="app_name">Latch Tags</string>
 </resources>

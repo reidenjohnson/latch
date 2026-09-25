@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Latch</string>
+    <string name="blocker_summary">Locks the apps you chose while a session runs</string>
+    <string name="blocker_description">During a Latch session, Latch covers the apps you chose until you tap your Latch tag. It only checks which app just opened. It never reads what\'s on your screen or what you type, and nothing leaves your phone.</string>
+</resources>

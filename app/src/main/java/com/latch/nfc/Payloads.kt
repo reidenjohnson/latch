@@ -67,21 +67,6 @@ object Payloads {
     fun wifi(ssid: String, security: WifiSecurity, password: String): NdefMessage =
         NdefMessage(NdefRecord.createMime(WifiTlv.MIME_TYPE, WifiTlv.encode(ssid, security, password)))
 
-    /**
-     * A Latch Focus tag: an external-type record that Latch's FocusTapActivity filters for, plus an Android
-     * Application Record so tapping it with Latch closed opens Latch (or its store page if it isn't installed).
-     * External types and their intent filter: https://developer.android.com/develop/connectivity/nfc/nfc#ext-type
-     * The tag is matched by its UID when tapped. The payload is only a format version.
-     */
-    const val FOCUS_DOMAIN = "com.latch"
-    const val FOCUS_KIND = "focus"
-    const val FOCUS_TYPE = "$FOCUS_DOMAIN:$FOCUS_KIND"
-
-    fun focus(): NdefMessage = NdefMessage(
-        NdefRecord.createExternal(FOCUS_DOMAIN, FOCUS_KIND, byteArrayOf(1)),
-        NdefRecord.createApplicationRecord("com.latch"),
-    )
-
     val EMPTY: NdefMessage get() = NdefMessage(NdefRecord(NdefRecord.TNF_EMPTY, null, null, null))
 
     private fun uri(value: String) = NdefMessage(NdefRecord.createUri(value))

@@ -76,7 +76,6 @@ import androidx.compose.material.icons.rounded.MedicalServices
 import androidx.compose.material.icons.rounded.Memory
 import androidx.compose.material.icons.rounded.Password
 import androidx.compose.material.icons.rounded.Terminal
-import androidx.compose.material.icons.rounded.SelfImprovement
 
 val RecordType.icon: ImageVector
     get() = when (this) {
@@ -135,7 +134,6 @@ val Operation.icon: ImageVector
         is Operation.SetPassword, is Operation.RemovePassword -> Icons.Rounded.Password
         is Operation.Counter -> Icons.Rounded.Insights
         is Operation.Raw -> Icons.Rounded.Terminal
-        is Operation.PairFocus -> Icons.Rounded.SelfImprovement
     }
 
 // ---- Color roles (see Accent in Theme.kt for the meaning of each color)
@@ -169,7 +167,6 @@ val Operation.accent: Color
         Operation.CopySource, is Operation.CopyTarget, is Operation.ReadMany, Operation.Dump -> Accent.teal
         is Operation.Erase, is Operation.SetPassword, is Operation.RemovePassword, is Operation.Counter, is Operation.Raw -> Accent.amber
         Operation.MakeReadOnly -> Accent.brick
-        is Operation.PairFocus -> Accent.fern
     }
 
 /** Screen title: a small colored overline, a big display title, and a quiet subtitle. */

@@ -193,7 +193,6 @@ private fun copyFor(op: Operation): Pair<String, String> = when (op) {
     is Operation.RemovePassword -> "Ready to remove password" to "Tap the protected tag."
     is Operation.Counter -> (if (op.enable) "Turn on scan counter" else "Turn off scan counter") to "Tap an NTAG213/215/216 tag."
     is Operation.Raw -> "Ready to send" to "${op.commands.size} command${if (op.commands.size == 1) "" else "s"} over ${op.tech.name}. Tap the tag."
-    is Operation.PairFocus -> "Pair your Focus tag" to "Hold your phone near the tag. Anything already on it will be replaced."
 }
 
 private fun labelFor(op: Operation): String? = when (op) {
