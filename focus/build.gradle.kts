@@ -42,7 +42,10 @@ android {
             optimization {
                 enable = true
             }
-            if (keystorePropsFile.exists()) {
+            // -PdebugSigned: the same shrunk build, installable over a debug install without wiping it.
+            if (project.hasProperty("debugSigned")) {
+                signingConfig = signingConfigs.getByName("debug")
+            } else if (keystorePropsFile.exists()) {
                 signingConfig = signingConfigs.getByName("release")
             }
         }
