@@ -30,7 +30,7 @@ Two free Android apps built around NFC tags.
 - **Minimal permissions.** Notifications are a normal yes/no prompt. Blocking and notification hiding each take one
   tap into Android's settings, and Latch comes back to the front when you've turned them on.
 - **Safe by design.** Phone, Settings, the home screen, keyboards and emergency apps are never blocked.
-  Five emergency unlocks a year work without the tag (tap twice to confirm). There's no root, no device admin and
+  Five emergency unlocks a year work without the tag (press and hold to confirm). There's no root, no device admin and
   no system changes, and uninstalling always removes every restriction.
 - **Private.** Blocking uses an Accessibility service that only receives "which app opened" events and can't
   read screen content (`canRetrieveWindowContent="false"`). There's no account, and nothing leaves the phone.

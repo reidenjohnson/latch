@@ -271,9 +271,6 @@ fun WaysOutSheet(state: AppState, onDismiss: () -> Unit, onEmergency: () -> Unit
             Spacer(Modifier.height(20.dp))
             val left = Rules.emergencyLeft(state, now)
             val back = Rules.emergencyBackAt(state, now)
-            // Tap once to arm, again within a few seconds to unlatch, so a stray tap can't spend one.
-            var armed by remember { mutableStateOf(false) }
-            LaunchedEffect(armed) { if (armed) { kotlinx.coroutines.delay(4000); armed = false } }
             Section(
                 "Emergency",
                 if (left > 0) "$left of ${Rules.EMERGENCY_PER_YEAR} left this year. Each one comes back a year after it's used."
@@ -281,11 +278,9 @@ fun WaysOutSheet(state: AppState, onDismiss: () -> Unit, onEmergency: () -> Unit
                     "${DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(back ?: now))}. Uninstalling Latch always removes every lock.",
             ) {
                 Box(Modifier.padding(12.dp)) {
-                    InkButton(
-                        when { left == 0 -> "None left this year"; armed -> "Tap again to unlatch"; else -> "Unlatch now" },
-                        enabled = left > 0, color = if (armed) p.brick else p.brick.copy(alpha = 0.12f),
-                        onColor = if (armed) Color.White else p.brick,
-                    ) { if (armed) onEmergency() else armed = true }
+                    // Press and hold, like latching without the tag, so a stray tap can't spend one.
+                    if (left > 0) HoldBar("Hold to unlatch now", "Keep holding…", HOLD_TO_START_SECONDS, p.brick, onDone = onEmergency)
+                    else InkButton("None left this year", enabled = false, color = p.brick.copy(alpha = 0.12f), onColor = p.brick) {}
                 }
             }
         }

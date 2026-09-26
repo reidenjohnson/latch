@@ -3,7 +3,14 @@ package com.latch.focus.ui
 import android.content.Context
 import android.content.Intent
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.foundation.layout.offset
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.withFrameMillis
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -173,24 +180,57 @@ fun <T> Pills(options: List<Pair<T, String>>, selected: T, color: Color, modifie
 }
 
 /**
- * Press and hold to confirm. The bar fills over [seconds]; letting go early resets it. Used for the emergency
- * unlock (always available, deliberately slow) and for starting a session without the tag.
+ * Press and hold to confirm, with the same feel as holding the on-screen Latch ([Puck]): a buzz that swells, a
+ * tight side-to-side hum, then a thud and a pop. The bar fills over [seconds]; letting go early resets it.
+ * Used for the emergency unlock.
  */
 @Composable
 fun HoldBar(label: String, holdingLabel: String, seconds: Int, color: Color, modifier: Modifier = Modifier, track: Color = color.copy(alpha = 0.12f), onDone: () -> Unit) {
     val progress = remember { Animatable(0f) }
+    val pop = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val done by rememberUpdatedState(onDone)
+    var holding by remember { mutableStateOf(false) }
+    var jitter by remember { mutableStateOf(0f) }
+    LaunchedEffect(holding) {
+        if (!holding) { jitter = 0f; return@LaunchedEffect }
+        var phase = 0.0
+        var last = -1L
+        while (holding) {
+            withFrameMillis { t ->
+                val dt = if (last < 0) 0L else t - last
+                last = t
+                val k = progress.value * progress.value
+                phase += 2 * Math.PI * (18 + 22 * k) * dt / 1000.0
+                jitter = (kotlin.math.sin(phase) * (0.4f + 2.6f * k)).toFloat()
+            }
+        }
+        jitter = 0f
+    }
+    val k = progress.value * progress.value
+    val burst = if (pop.value in 0.001f..0.999f) 1 - pop.value else 0f
     Box(
-        modifier.fillMaxWidth().height(56.dp).clip(CircleShape).background(track)
+        modifier.fillMaxWidth().height(56.dp)
+            .offset { IntOffset(jitter.dp.roundToPx(), 0) }
+            .scale(1f + 0.03f * k + 0.06f * burst)
+            .clip(CircleShape).background(track)
             .pointerInput(Unit) {
                 detectTapGestures(onPress = {
+                    holding = true
+                    Buzz.ramp(context, (seconds * 1000 * (1 - progress.value)).toInt())
                     val run = scope.launch {
                         progress.animateTo(1f, tween((seconds * 1000 * (1 - progress.value)).toInt(), easing = LinearEasing))
-                        onDone()
+                        holding = false
+                        Buzz.stop(context)
+                        Buzz.thud(context)
+                        launch { pop.snapTo(0f); pop.animateTo(1f, tween(650, easing = FastOutSlowInEasing)); pop.snapTo(0f) }
+                        done()
                         progress.snapTo(0f)
                     }
                     tryAwaitRelease()
-                    if (progress.value < 1f) { run.cancel(); scope.launch { progress.animateTo(0f, tween(250)) } }
+                    holding = false
+                    if (progress.value < 1f) { run.cancel(); Buzz.stop(context); scope.launch { progress.animateTo(0f, tween(250)) } }
                 })
             },
         contentAlignment = Alignment.Center,
