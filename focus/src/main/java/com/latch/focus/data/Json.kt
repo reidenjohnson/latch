@@ -17,10 +17,13 @@ object Json {
         .put("sessions", arr(s.sessions, ::session))
         .put("skips", JSONObject(s.skips.mapValues { it.value }))
         .put("passcode", s.passcode ?: JSONObject.NULL)
+        .put("emergencyUses", JSONArray(s.emergencyUses))
+        .put("feedback", arr(s.feedback, ::feedback))
         .toString()
 
     fun read(text: String): AppState {
         val o = JSONObject(text)
+        val sessions = list(o.optJSONArray("sessions"), ::session)
         return AppState(
             onboarded = o.optBoolean("onboarded"),
             tags = list(o.optJSONArray("tags")) { LatchTag(it.getString("uid"), it.getString("name"), it.getLong("pairedAt")) },
@@ -28,11 +31,24 @@ object Json {
             selectedModeId = o.optStringOrNull("selected"),
             timerMinutes = if (o.isNull("timer") || !o.has("timer")) null else o.getInt("timer"),
             active = o.optJSONObject("active")?.let(::active),
-            sessions = list(o.optJSONArray("sessions"), ::session),
+            sessions = sessions,
             skips = o.optJSONObject("skips")?.let { sk -> sk.keys().asSequence().associateWith { sk.getLong(it) } }.orEmpty(),
             passcode = o.optStringOrNull("passcode"),
+            // Files from before the yearly limit count the emergency unlocks already in the history.
+            emergencyUses = o.optJSONArray("emergencyUses")?.let { a -> (0 until a.length()).map { a.getLong(it) } }
+                ?: sessions.filter { it.endReason == EndReason.Emergency }.map { it.end },
+            feedback = list(o.optJSONArray("feedback"), ::feedback),
         )
     }
+
+    private fun feedback(f: Feedback) = JSONObject()
+        .put("id", f.id).put("kind", f.kind.name).put("text", f.text).put("at", f.at).put("device", f.device)
+        .put("done", f.done).put("error", f.error ?: JSONObject.NULL)
+
+    private fun feedback(o: JSONObject) = Feedback(
+        id = o.getString("id"), kind = enumOr(o.optString("kind"), FeedbackKind.Other), text = o.getString("text"),
+        at = o.getLong("at"), device = o.optString("device"), done = o.optBoolean("done"), error = o.optStringOrNull("error"),
+    )
 
     private fun mode(m: Mode) = JSONObject()
         .put("id", m.id).put("name", m.name).put("hue", m.hue.name).put("type", m.type.name)

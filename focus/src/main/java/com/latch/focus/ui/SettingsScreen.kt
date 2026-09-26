@@ -21,6 +21,7 @@ import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.NotificationsOff
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.HealthAndSafety
+import androidx.compose.material.icons.rounded.Feedback
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -73,6 +74,7 @@ fun SettingsScreen(
     onRenameTag: (String, String) -> Unit,
     onUnpair: (String) -> Unit,
     onTurnOnBlocking: () -> Unit,
+    onFeedback: () -> Unit,
 ) {
     val p = palette
     val context = LocalContext.current
@@ -157,14 +159,14 @@ fun SettingsScreen(
             ) {
                 ListRow(
                     "Passcode", icon = Icons.Rounded.Password, tint = p.teal,
-                    subtitle = "Lets you unlatch this phone without the tag. Handy for a kid, or if a tag goes missing.",
+                    subtitle = "Unlatches without the tag, and is needed to reset Latch. Handy for a kid, or if a tag goes missing.",
                     value = if (state.passcode != null) "On" else "Off", chevron = true, enabled = !locked,
                 ) { passcodeDialog = true }
                 RowDivider()
                 ListRow(
                     "Emergency unlock", icon = Icons.Rounded.HealthAndSafety, tint = p.brick,
-                    subtitle = "Hold for $EMERGENCY_SECONDS seconds to unlatch without your tag.",
-                    value = "${state.emergencyUnlocks} used",
+                    subtitle = "Unlatch without your tag, ${Rules.EMERGENCY_PER_YEAR} times a year.",
+                    value = "${Rules.emergencyLeft(state, System.currentTimeMillis())} left",
                 )
             }
         }
@@ -178,6 +180,16 @@ fun SettingsScreen(
                     "Reset Latch", icon = Icons.Rounded.RestartAlt, tint = p.brick, titleColor = p.brick,
                     subtitle = "Forget modes, paired tags and history, and start setup over.", enabled = !locked,
                 ) { confirm = Confirm.Reset }
+            }
+        }
+        item {
+            Section("Help", "Everything you write stays on this phone.") {
+                val open = state.feedback.count { !it.done }
+                ListRow(
+                    "Feedback", icon = Icons.Rounded.Feedback, tint = p.amber,
+                    subtitle = "Report a bug, ask for a feature, see error logs.",
+                    value = if (open > 0) "$open open" else null, chevron = true, onClick = onFeedback,
+                )
             }
         }
         item {
@@ -217,18 +229,38 @@ fun SettingsScreen(
             confirmButton = { TextButton(onClick = { context.latch.clearHistory(); confirm = null }) { Text("Clear", color = p.brick) } },
             dismissButton = { TextButton(onClick = { confirm = null }) { Text("Cancel") } },
         )
-        Confirm.Reset -> AlertDialog(
-            onDismissRequest = { confirm = null },
-            title = { Text("Reset Latch?") },
-            text = {
-                Text(
-                    "This forgets every mode, paired tag and session on this phone, and takes you back to setup. " +
-                        "Your tags aren't changed, so you can pair them again. This can't be undone.",
-                )
-            },
-            confirmButton = { TextButton(onClick = { context.latch.resetAll(); confirm = null }) { Text("Reset", color = p.brick) } },
-            dismissButton = { TextButton(onClick = { confirm = null }) { Text("Cancel") } },
-        )
+        Confirm.Reset -> {
+            var code by remember { mutableStateOf("") }
+            var wrong by remember { mutableStateOf(false) }
+            val needsCode = state.passcode != null
+            AlertDialog(
+                onDismissRequest = { confirm = null },
+                title = { Text("Reset Latch?") },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(
+                            "This forgets every mode, paired tag and session on this phone, and takes you back to setup. " +
+                                "Your tags aren't changed, so you can pair them again. This can't be undone.",
+                        )
+                        if (needsCode) {
+                            OutlinedTextField(
+                                code, { code = it.take(Passcode.MAX_LENGTH); wrong = false }, singleLine = true,
+                                label = { Text("Passcode") }, isError = wrong,
+                                supportingText = if (wrong) ({ Text("That's not it.") }) else null,
+                                visualTransformation = PasswordVisualTransformation(),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(enabled = !needsCode || code.isNotEmpty(), onClick = {
+                        if (context.latch.resetAll(code.takeIf { needsCode })) confirm = null else { wrong = true; code = "" }
+                    }) { Text("Reset", color = p.brick) }
+                },
+                dismissButton = { TextButton(onClick = { confirm = null }) { Text("Cancel") } },
+            )
+        }
         null -> Unit
     }
 
@@ -251,13 +283,13 @@ private enum class Confirm { ClearHistory, Reset }
 private fun PasscodeDialog(hasOne: Boolean, onDismiss: () -> Unit, onSave: (String?) -> Unit) {
     var first by remember { mutableStateOf("") }
     var second by remember { mutableStateOf("") }
-    val digits = { v: String -> v.filter(Char::isDigit).take(Passcode.MAX_LENGTH) }
+    val digits = { v: String -> v.take(Passcode.MAX_LENGTH) }
     val mismatch = second.isNotEmpty() && second.length >= first.length && second != first
     val field = @Composable { value: String, label: String, onChange: (String) -> Unit ->
         OutlinedTextField(
             value, { onChange(digits(it)) }, singleLine = true, label = { Text(label) },
             visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
         )
     }
     AlertDialog(
@@ -265,7 +297,7 @@ private fun PasscodeDialog(hasOne: Boolean, onDismiss: () -> Unit, onSave: (Stri
         title = { Text(if (hasOne) "Change passcode" else "Set a passcode") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("${Passcode.MIN_LENGTH} to ${Passcode.MAX_LENGTH} digits. Anyone who knows it can unlatch this phone, so keep it to yourself.")
+                Text("At least ${Passcode.MIN_LENGTH} characters: letters, numbers or both. It unlatches this phone and is needed to reset Latch, so keep it to yourself.")
                 field(first, "New passcode") { first = it }
                 field(second, "Type it again") { second = it }
                 if (mismatch) Text("Those don't match.", color = palette.brick)

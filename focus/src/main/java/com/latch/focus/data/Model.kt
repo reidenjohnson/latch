@@ -73,6 +73,20 @@ data class Mode(
     val ready: Boolean get() = type == ListType.Allow || apps.isNotEmpty()
 }
 
+enum class FeedbackKind(val label: String) { Bug("Bug"), Feature("Feature"), Other("Other") }
+
+/** One bug report or feature request. [device] is the app version, phone and Android version when it was written. */
+data class Feedback(
+    val id: String,
+    val kind: FeedbackKind,
+    val text: String,
+    val at: Long,
+    val device: String,
+    val done: Boolean = false,
+    /** A crash report attached from the Errors tab, if any. */
+    val error: String? = null,
+)
+
 data class LatchTag(val uid: String, val name: String, val pairedAt: Long)
 
 enum class Trigger { Tag, Hold, Schedule }
@@ -119,6 +133,10 @@ data class AppState(
     val skips: Map<String, Long> = emptyMap(),
     /** Optional unlock passcode, as a salted hash (see [Passcode]). Null = none set. */
     val passcode: String? = null,
+    /** When each emergency unlock was used, newest first. Kept apart from history so clearing it can't refill them. */
+    val emergencyUses: List<Long> = emptyList(),
+    /** Bug reports and feature requests, newest first. Stays on the phone. */
+    val feedback: List<Feedback> = emptyList(),
 ) {
     fun isPaired(uid: String) = tags.any { it.uid == uid }
     val selectedMode: Mode? get() = modes.firstOrNull { it.id == selectedModeId } ?: modes.firstOrNull()

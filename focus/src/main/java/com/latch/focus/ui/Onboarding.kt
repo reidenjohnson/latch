@@ -119,7 +119,7 @@ private fun Hero(onStart: () -> Unit) {
         Feature(LatchGlyph, p.teal, "Tap to latch", "Tap your Latch and the apps that pull you in are locked.")
         Feature(Icons.Rounded.LockOpen, p.fern, "Tap to unlatch", "To get them back, walk over and tap it again.")
         Feature(Icons.Rounded.Schedule, p.amber, "Runs on a schedule", "Latch automatically for work hours or bedtime, if you like.")
-        Feature(Icons.Rounded.HealthAndSafety, p.brick, "Always a way out", "Calls, Settings and an emergency unlock always work.")
+        Feature(Icons.Rounded.HealthAndSafety, p.brick, "Always a way out", "Calls and Settings always work, and you get ${com.latch.focus.data.Rules.EMERGENCY_PER_YEAR} emergency unlocks a year.")
         Spacer(Modifier.weight(1f))
         Spacer(Modifier.height(24.dp))
         InkButton("Get started", onClick = onStart)

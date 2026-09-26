@@ -34,6 +34,8 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -61,7 +63,6 @@ import com.latch.focus.ui.theme.palette
 import java.text.DateFormat
 import java.util.Date
 
-const val EMERGENCY_SECONDS = 10
 
 @Composable
 fun HomeScreen(
@@ -253,10 +254,10 @@ fun WaysOutSheet(state: AppState, onDismiss: () -> Unit, onEmergency: () -> Unit
                 Section("Passcode", if (wrong) "That's not it. Try again." else "Whoever set the passcode can unlatch this phone.") {
                     Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         OutlinedTextField(
-                            code, { code = it.filter(Char::isDigit).take(Passcode.MAX_LENGTH); wrong = false },
+                            code, { code = it.take(Passcode.MAX_LENGTH); wrong = false },
                             singleLine = true, placeholder = { Text("Passcode") }, isError = wrong,
                             visualTransformation = PasswordVisualTransformation(),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                             modifier = Modifier.weight(1f),
                         )
                         Spacer(Modifier.width(10.dp))
@@ -268,16 +269,23 @@ fun WaysOutSheet(state: AppState, onDismiss: () -> Unit, onEmergency: () -> Unit
             }
 
             Spacer(Modifier.height(20.dp))
+            val left = Rules.emergencyLeft(state, now)
+            val back = Rules.emergencyBackAt(state, now)
+            // Tap once to arm, again within a few seconds to unlatch, so a stray tap can't spend one.
+            var armed by remember { mutableStateOf(false) }
+            LaunchedEffect(armed) { if (armed) { kotlinx.coroutines.delay(4000); armed = false } }
             Section(
                 "Emergency",
-                "Hold for $EMERGENCY_SECONDS seconds. " + when (state.emergencyUnlocks) {
-                    0 -> "You haven't used it yet."
-                    1 -> "You've used it once."
-                    else -> "You've used it ${state.emergencyUnlocks} times."
-                },
+                if (left > 0) "$left of ${Rules.EMERGENCY_PER_YEAR} left this year. Each one comes back a year after it's used."
+                else "All ${Rules.EMERGENCY_PER_YEAR} are used. The next one comes back on " +
+                    "${DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(back ?: now))}. Uninstalling Latch always removes every lock.",
             ) {
                 Box(Modifier.padding(12.dp)) {
-                    HoldBar("Hold to unlatch now", "Keep holding…", EMERGENCY_SECONDS, p.brick, onDone = onEmergency)
+                    InkButton(
+                        when { left == 0 -> "None left this year"; armed -> "Tap again to unlatch"; else -> "Unlatch now" },
+                        enabled = left > 0, color = if (armed) p.brick else p.brick.copy(alpha = 0.12f),
+                        onColor = if (armed) Color.White else p.brick,
+                    ) { if (armed) onEmergency() else armed = true }
                 }
             }
         }

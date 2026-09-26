@@ -19,7 +19,7 @@ object Buzz {
     fun tick(context: Context, strength: Float) {
         if (!Prefs.haptics.value) return
         val v = vibrator(context) ?: return
-        val s = strength.coerceIn(0.05f, 1f)
+        val s = strength.coerceIn(0.3f, 1f)
         runCatching {
             if (v.areAllPrimitivesSupported(VibrationEffect.Composition.PRIMITIVE_LOW_TICK)) {
                 v.vibrate(VibrationEffect.startComposition().addPrimitive(VibrationEffect.Composition.PRIMITIVE_LOW_TICK, s).compose())
@@ -42,7 +42,8 @@ object Buzz {
         val timings = LongArray(steps) { 50L }
         val amps = IntArray(steps) { i ->
             val t = (i + 1f) / steps
-            (12 + 243 * t * t).toInt().coerceIn(1, 255)
+            // Starts at ~30%: from 5%, a Galaxy S23 FE played it (vibrator_manager log) but it was too faint to feel.
+            (80 + 175 * t * t).toInt().coerceIn(1, 255)
         }
         runCatching {
             if (v.hasAmplitudeControl()) v.vibrate(VibrationEffect.createWaveform(timings, amps, -1))

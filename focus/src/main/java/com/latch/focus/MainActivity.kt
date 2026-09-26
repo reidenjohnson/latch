@@ -44,6 +44,7 @@ import com.latch.focus.data.Stats
 import com.latch.focus.nfc.PairState
 import com.latch.focus.nfc.TapNote
 import com.latch.focus.ui.ActivityScreen
+import com.latch.focus.ui.FeedbackScreen
 import com.latch.focus.ui.GhostButton
 import com.latch.focus.ui.HomeScreen
 import com.latch.focus.ui.ModeEditor
@@ -96,7 +97,7 @@ class MainActivity : ComponentActivity() {
         runCatching { adapter?.disableReaderMode(this) }
     }
 
-    private enum class Screen { Home, Activity, Settings, Mode }
+    private enum class Screen { Home, Activity, Settings, Mode, Feedback }
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
@@ -123,6 +124,8 @@ class MainActivity : ComponentActivity() {
             val (stamp, c) = event ?: return@LaunchedEffect
             if (stamp == seenEvent) return@LaunchedEffect
             seenEvent = stamp
+            // Already confirmed by the tap screen or the lock screen: don't say it twice.
+            if (!com.latch.focus.engine.Confirmations.claim(stamp, com.latch.focus.engine.Confirmations.Screen.App)) return@LaunchedEffect
             screen = Screen.Home
             when (c) {
                 is Change.Started -> snackbar.showSnackbar("${com.latch.focus.ui.Words.pick(com.latch.focus.ui.Words.state)} · ${com.latch.focus.ui.apps(c.active.blocked.size)} locked")
@@ -145,7 +148,9 @@ class MainActivity : ComponentActivity() {
                 if (!state.onboarded) {
                     Onboarding(state, tagReader, onSaveMode = engine::saveMode, onFinish = engine::finishOnboarding)
                 } else {
-                    BackHandler(screen != Screen.Home) { screen = if (screen == Screen.Mode) modeReturn else Screen.Home }
+                    BackHandler(screen != Screen.Home) {
+                        screen = when (screen) { Screen.Mode -> modeReturn; Screen.Feedback -> Screen.Settings; else -> Screen.Home }
+                    }
                     AnimatedContent(screen, transitionSpec = { fadeIn() togetherWith fadeOut() }, label = "screen") { s ->
                         when (s) {
                             Screen.Home -> HomeScreen(
@@ -173,7 +178,9 @@ class MainActivity : ComponentActivity() {
                                 onRenameTag = engine::renameTag,
                                 onUnpair = engine::unpair,
                                 onTurnOnBlocking = { blockingInfo = true },
+                                onFeedback = { screen = Screen.Feedback },
                             )
+                            Screen.Feedback -> FeedbackScreen(state) { screen = Screen.Settings }
                             Screen.Mode -> ModeEditor(
                                 initial = state.mode(editingMode),
                                 usedHues = state.modes.map { it.hue }.toSet(),

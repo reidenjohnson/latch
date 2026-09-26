@@ -7,17 +7,18 @@ import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 
 /**
- * The optional unlock passcode, stored only as a salted PBKDF2-HMAC-SHA256 hash ("salt:hash", base64), never as
- * the digits themselves. PBKDF2 is in the standard Java crypto provider on Android and the JVM:
+ * The one optional passcode for the whole app (unlatching and Reset), stored only as a salted PBKDF2-HMAC-SHA256
+ * hash ("salt:hash", base64), never as the text itself. PBKDF2 is in the standard Java crypto provider on Android and the JVM:
  * https://developer.android.com/reference/javax/crypto/SecretKeyFactory
  */
 object Passcode {
     private const val ITERATIONS = 120_000
     private const val BITS = 256
     const val MIN_LENGTH = 4
-    const val MAX_LENGTH = 8
+    const val MAX_LENGTH = 32
 
-    fun isValid(code: String) = code.length in MIN_LENGTH..MAX_LENGTH && code.all { it.isDigit() }
+    /** Any characters (letters, digits, symbols), typed on the full keyboard. Old all-digit passcodes still match. */
+    fun isValid(code: String) = code.length in MIN_LENGTH..MAX_LENGTH && code.isNotBlank()
 
     fun hash(code: String): String {
         val salt = ByteArray(16).also { SecureRandom().nextBytes(it) }

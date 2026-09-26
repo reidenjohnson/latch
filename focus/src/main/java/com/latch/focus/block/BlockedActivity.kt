@@ -61,6 +61,7 @@ import com.latch.focus.ui.Words
 import com.latch.focus.ui.rememberWord
 import com.latch.focus.ui.apps
 import com.latch.focus.ui.BANNER_TOP
+import com.latch.focus.engine.Confirmations
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.animation.fadeIn
@@ -129,7 +130,11 @@ class BlockedActivity : ComponentActivity() {
         val snackbar = remember { SnackbarHostState() }
         LaunchedEffect(Unit) {
             val a = latch.state.value.active ?: return@LaunchedEffect
-            if (System.currentTimeMillis() - a.start < 4000) snackbar.showSnackbar("${Words.pick(Words.state)} · ${apps(a.blocked.size)} locked")
+            val stamp = latch.events.value?.first ?: return@LaunchedEffect
+            // Only if the tap card hasn't already confirmed it.
+            if (System.currentTimeMillis() - a.start < 4000 && Confirmations.claim(stamp, Confirmations.Screen.Lock)) {
+                snackbar.showSnackbar("${Words.pick(Words.state)} · ${apps(a.blocked.size)} locked")
+            }
         }
 
         Box(Modifier.fillMaxSize().background(ink)) {

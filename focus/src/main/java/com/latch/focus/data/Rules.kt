@@ -37,6 +37,24 @@ object Rules {
         return s.copy(active = null, sessions = (listOf(session) + s.sessions).take(MAX_SESSIONS), skips = skips) to Change.Ended(session)
     }
 
+    /** Emergency unlocks allowed in any rolling year. Uninstalling Latch is always the last way out. */
+    const val EMERGENCY_PER_YEAR = 5
+    const val YEAR_MS = 365L * 24 * 60 * 60_000L
+
+    fun emergencyLeft(s: AppState, now: Long): Int =
+        (EMERGENCY_PER_YEAR - s.emergencyUses.count { it > now - YEAR_MS }).coerceAtLeast(0)
+
+    /** When the next emergency unlock comes back, if they're all used up. */
+    fun emergencyBackAt(s: AppState, now: Long): Long? =
+        if (emergencyLeft(s, now) > 0) null else s.emergencyUses.filter { it > now - YEAR_MS }.minOrNull()?.plus(YEAR_MS)
+
+    /** Unlatch without the tag, if one of this year's emergency unlocks is left. Otherwise nothing changes. */
+    fun emergency(s: AppState, now: Long): Pair<AppState, Change?> {
+        if (s.active == null || emergencyLeft(s, now) == 0) return s to null
+        val (next, c) = end(s, EndReason.Emergency, now)
+        return next.copy(emergencyUses = (listOf(now) + s.emergencyUses).filter { it > now - YEAR_MS }) to c
+    }
+
     /** The earliest an "unlatch later" can be: an hour from now. No instant gratification. */
     const val MIN_LATER_MS = 60 * 60_000L
 

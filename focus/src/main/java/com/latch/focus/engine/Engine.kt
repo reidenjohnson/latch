@@ -4,6 +4,8 @@ import android.content.Context
 import com.latch.focus.data.AppState
 import com.latch.focus.data.Change
 import com.latch.focus.data.EndReason
+import com.latch.focus.data.Feedback
+import com.latch.focus.data.FeedbackKind
 import com.latch.focus.data.Hue
 import com.latch.focus.data.Json
 import com.latch.focus.data.LatchTag
@@ -70,7 +72,16 @@ class Engine(private val context: Context) {
         Rules.start(s, mode, Trigger.Hold, now(), blockedFor, endsAt = s.timerMinutes?.let { now() + it * 60_000L })
     }
 
-    fun emergencyUnlock(): Change? = apply { Rules.end(it, EndReason.Emergency, now()) }
+    /** Unlatch without the tag. Limited to [Rules.EMERGENCY_PER_YEAR] a year; returns null once they're used up. */
+    fun emergencyUnlock(): Change? = apply { Rules.emergency(it, now()) }
+
+    // ---- Feedback. Allowed while latched: a bug can show up mid-session.
+
+    fun addFeedback(kind: FeedbackKind, text: String, error: String? = null) = update { s ->
+        s.copy(feedback = listOf(Feedback(UUID.randomUUID().toString(), kind, text.trim(), now(), CrashLog.device(context), error = error)) + s.feedback)
+    }
+    fun setFeedbackDone(id: String, done: Boolean) = update { s -> s.copy(feedback = s.feedback.map { if (it.id == id) it.copy(done = done) else it }) }
+    fun deleteFeedback(id: String) = update { s -> s.copy(feedback = s.feedback.filterNot { it.id == id }) }
 
     /** Unlatch with the passcode instead of the tag. Returns false (and changes nothing) if it's wrong. */
     fun unlockWithPasscode(code: String): Boolean {
@@ -115,11 +126,14 @@ class Engine(private val context: Context) {
 
     /**
      * Start over: forgets modes, paired tags and history, and goes back to first-run setup. Refused while latched,
-     * so it can't be used to skip the tag (the emergency unlock is the way out). Theme and haptics are kept.
+     * so it can't be used to skip the tag (the emergency unlock is the way out). Needs the passcode if one is set.
+     * Theme and haptics are kept, and so are this year's emergency unlocks (a reset mustn't refill them) and feedback.
      */
-    fun resetAll(): Boolean {
+    fun resetAll(code: String?): Boolean {
         if (locked) return false
-        apply { withDefaultMode(AppState()) to null }
+        val s0 = _state.value
+        if (s0.passcode != null && (code == null || !Passcode.matches(code, s0.passcode))) return false
+        apply { s -> withDefaultMode(AppState(emergencyUses = s.emergencyUses, feedback = s.feedback)) to null }
         return true
     }
 
