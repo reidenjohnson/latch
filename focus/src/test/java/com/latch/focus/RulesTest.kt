@@ -131,4 +131,30 @@ class RulesTest {
         assertEquals("1:12:04", Stats.clock((72 * 60 + 4) * 1000L))
         assertEquals("9:05 PM", Stats.timeOfDay(21 * 60 + 5, false))
     }
+
+    @Test fun emergencyIsFiveARollingYear() {
+        var s = base
+        var t = monday9
+        repeat(Rules.EMERGENCY_PER_YEAR) {
+            s = Rules.tap(s, "AA", t, block).first
+            val (next, c) = Rules.emergency(s, t + 1000)
+            assertTrue(c is Change.Ended)
+            s = next; t += 86_400_000L
+        }
+        assertEquals(0, Rules.emergencyLeft(s, t))
+        s = Rules.tap(s, "AA", t, block).first
+        val (still, none) = Rules.emergency(s, t)
+        assertNull(none)
+        assertNotNull(still.active)
+        // The first one comes back a year after it was used.
+        val back = Rules.emergencyBackAt(s, t)!!
+        assertEquals(monday9 + 1000 + Rules.YEAR_MS, back)
+        assertEquals(1, Rules.emergencyLeft(s, back + 1))
+        assertTrue(Rules.emergency(s, back + 1).second is Change.Ended)
+    }
+
+    @Test fun clearingHistoryDoesNotRefillEmergencies() {
+        val s = Rules.emergency(Rules.tap(base, "AA", monday9, block).first, monday9 + 1000).first
+        assertEquals(Rules.EMERGENCY_PER_YEAR - 1, Rules.emergencyLeft(s.copy(sessions = emptyList()), monday9 + 2000))
+    }
 }

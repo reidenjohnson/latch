@@ -27,11 +27,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.PriorityHigh
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import com.latch.focus.engine.Confirmations
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -87,6 +84,8 @@ class TapActivity : ComponentActivity() {
         uid = TagReader.uid(tag)
         change = latch.tap(uid!!)
         val ok = change is Change.Started || change is Change.Ended
+        // This card is the one confirmation for the tap: the app and lock screen skip their snackbar for it.
+        if (ok) latch.events.value?.first?.let { Confirmations.take(it, Confirmations.Screen.Tap) }
         if (com.latch.focus.engine.Prefs.haptics.value) runCatching {
             val v = getSystemService(android.os.VibratorManager::class.java)?.defaultVibrator
             v?.vibrate(
@@ -104,33 +103,9 @@ class TapActivity : ComponentActivity() {
         finish()
     }
 
-    /** Latched / unlatched: the same snackbar the app uses, in the same spot, shown once (see [Confirmations]). */
-    @Composable
-    private fun Confirmation(c: Change, stamp: Long) {
-        val snackbar = remember { SnackbarHostState() }
-        val owner by Confirmations.owner.collectAsState()
-        LaunchedEffect(owner) { if (owner?.first == stamp && owner?.second != Confirmations.Screen.Tap) finish() }
-        LaunchedEffect(c) {
-            snackbar.showSnackbar(
-                when (c) {
-                    is Change.Started -> "${Words.pick(Words.state)} · ${apps(c.active.blocked.size)} locked"
-                    is Change.Ended -> "Unlatched · you stayed off for ${Stats.format(c.session.length)}"
-                    else -> return@LaunchedEffect
-                },
-            )
-            finish()
-        }
-        Box(Modifier.fillMaxSize().clickable(remember { MutableInteractionSource() }, indication = null) { finish() }) {
-            SnackbarHost(snackbar, Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(start = 16.dp, end = 16.dp, top = com.latch.focus.ui.BANNER_TOP))
-        }
-    }
-
     @Composable
     private fun Card() {
         val c = change ?: return
-        val stamp = latch.events.value?.first
-        // The card is the one confirmation for a tap: the app and lock screen skip their snackbar for this event.
-        if ((c is Change.Started || c is Change.Ended) && stamp != null) LaunchedEffect(stamp) { Confirmations.take(stamp, Confirmations.Screen.Tap) }
         val p = palette
         var shown by remember { mutableStateOf(false) }
         val scale by animateFloatAsState(if (shown) 1f else 0.9f, spring(dampingRatio = Spring.DampingRatioMediumBouncy), label = "in")
