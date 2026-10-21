@@ -4,7 +4,7 @@ Two free Android apps built around NFC tags.
 
 - **Latch** is a tap-to-focus app blocker, a free take on the Brick idea. Stick a cheap NFC tag somewhere you
   have to walk to. Tap it to lock the apps that pull you in, and tap it again to get them back.
-- **Latch Tags** is a clean NFC reader and writer with every feature free.
+- **Tagwise** is a clean NFC reader and writer with every feature free.
 
 ## Latch
 
@@ -35,9 +35,9 @@ Two free Android apps built around NFC tags.
 - **Private.** Blocking uses an Accessibility service that only receives "which app opened" events and can't
   read screen content (`canRetrieveWindowContent="false"`). There's no account, and nothing leaves the phone.
 
-## Latch Tags
+## Tagwise
 
-Most NFC apps on the Play Store bury simple actions behind subscriptions and cluttered screens. Latch Tags keeps
+Most NFC apps on the Play Store bury simple actions behind subscriptions and cluttered screens. Tagwise keeps
 it simple, speaks plain English, and checks every write so you know the tag actually worked.
 
 **Read.** Tap any tag to see what's on it, in words, not hex: websites, Wi-Fi logins, contacts, phone
@@ -105,7 +105,7 @@ focus/  Latch (com.latch)
   nfc/     pairing and in-app taps (reader mode)
   ui/      Compose screens and the design system
 
-app/  Latch Tags (com.latch.tags)
+app/  Tagwise (com.latch.tags)
   nfc/      NFC logic, no UI: controller, tag I/O, NDEF parser, payload builders
   data/     history store
   ui/       Compose screens (read, write, tools, history), components, theme
@@ -117,5 +117,5 @@ Requires JDK 17+ and the Android SDK (compileSdk 37).
 
 ```
 ./gradlew testDebugUnitTest                         # unit tests, both apps
-./gradlew :focus:assembleDebug :app:assembleDebug   # Latch, Latch Tags
+./gradlew :focus:assembleDebug :app:assembleDebug   # Latch, Tagwise
 ```

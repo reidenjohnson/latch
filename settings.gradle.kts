@@ -20,5 +20,5 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Latch"
-include(":app")   // Latch Tags: NFC reader/writer
+include(":app")   // Tagwise: NFC reader/writer
 include(":focus") // Latch: tap-to-focus app blocker

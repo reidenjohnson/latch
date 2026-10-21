@@ -121,7 +121,7 @@ class TagReader(private val context: Context, private val engine: Engine) {
          * A Latch tag holds an NFC Forum external record, which Latch's TapActivity filters for, plus an Android
          * Application Record so a tap with Latch closed opens Latch (or its store page if it isn't installed).
          * https://developer.android.com/develop/connectivity/nfc/nfc#ext-type
-         * The record is the same one Latch Tags wrote, so tags paired before the split keep working.
+         * The record is the same one Tagwise wrote, so tags paired before the split keep working.
          */
         const val DOMAIN = "com.latch"
         const val KIND = "focus"
