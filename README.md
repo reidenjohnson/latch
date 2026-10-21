@@ -8,6 +8,8 @@ Two free Android apps built around NFC tags.
 
 ## Latch
 
+<img src="docs/screenshots/latch-welcome.png" width="260" alt="Latch welcome screen">
+
 - **Tap to lock, tap to unlock.** Any NFC sticker, card or key fob becomes your Latch. Taps work with the app
   closed. Someone else's phone that taps your Latch isn't locked: it explains what the tag is and offers to pair.
 - **Modes.** Up to 10 modes (Work, Sleep, Family…), each with its own color, app list and schedules. Block the
