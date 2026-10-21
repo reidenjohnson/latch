@@ -39,6 +39,8 @@ Two free Android apps built around NFC tags.
 
 ## Tagwise
 
+<img src="docs/screenshots/tagwise-read.png" width="260" alt="Tagwise read screen"> <img src="docs/screenshots/tagwise-write.png" width="260" alt="Tagwise write screen">
+
 Most NFC apps on the Play Store bury simple actions behind subscriptions and cluttered screens. Tagwise keeps
 it simple, speaks plain English, and checks every write so you know the tag actually worked.
 
